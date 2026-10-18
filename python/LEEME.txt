@@ -1,0 +1,10 @@
+Simulador macro trimestral 2027 - scripts de reproducción
+Archivos:
+ vm.py              modelo IS-LM-BP de dos sectores (versión 6) con funciones de verificación simbólica.
+ make_sets.py       recalibra la posición de referencia (PBI de US$700.000 millones, sector transable 40%) y genera set_A.json y set_B.json (respuestas por unidad de shock).
+ deuda_mensual.json capital e intereses mensuales por categoría de la planilla de deuda pública (MECON, 30/06/2026).
+ sens.json          tabla de sensibilidad entre los dos juegos de coeficientes (valores calculados).
+ build_xlsx.py      arma la planilla. Uso: python3 build_xlsx.py <1|2> <salida.xlsx> [sens.json]
+Contenido de la planilla: Leyenda, Supuestos, Comparativo, Sensibilidad, Calendario_FX, Presupuesto_2027 (capital de organismos), Base, Optimista, Pesimista, Coeficientes, Verificacion.
+Módulos incorporados: servicio de deuda (MECON) con capital de organismos del Presupuesto 2027 (selector), BOPREAL Serie 1, obligaciones negociables (liquidaciones pendientes y pagos), compras del BCRA, cuenta corriente por escenario.
+Requiere sympy y openpyxl. Parámetros ilustrativos, no estimados; los datos de usuario no fueron verificados por el analista a pedido suyo.
