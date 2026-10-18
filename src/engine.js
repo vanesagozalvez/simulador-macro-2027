@@ -9,12 +9,12 @@ const FMI_PRES = [1.33,.58,0,1.48,0,0,2.25,.62,0,1.58,0,0];
 export const SCEN = ['Base','Optimista','Pesimista'];
 // Parámetros con 3 valores = [base, optimista, pesimista]
 export const DEFAULTS = {
-  sel:1, selcap:2, gdp:700000, ca26:.006, ca27:[0,.005,-.005], gtr:.021, pistar:.03, E0:1507, pi0:33, anc0:28, anc4:18,
+  sel:2, selcap:2, gdp:700000, ca26:.006, ca27:[0,.005,-.005], gtr:.003, pistar:.035, E0:1530, pi0:35, anc0:29, anc4:18,
   dtx:.75, dtm:.25, dG:0, onq1:2700, ondemq1:2600, ondem:[300,180,420], onca:0,
-  fxpl:1778.8, bidpl:2, otrospl:2, restopl:2.8, pfac:[1,1.15,.75], oct27:0,
+  fxpl:1530, bidpl:2, otrospl:2, restopl:2.8, pfac:[1,1.15,.75], oct27:0,
   m:[1158,1557,1671,2769,2596,1418,2162,768,473],
-  saldo:[1850,3700,0], imf:850, imfq:[2,2,4], ooii:4200, ooiip:[1,1,.5], bil:2000, bilp:[1,1,0], priv:1500, privp:[.5,1,0], sh1:.5,
-  intra:1800, loc:[0,5000,0], intl:[0,4000,0], p:[.05,.02,.10], pref:.05, rho0:636, rho4:[636,450,900],
+  saldo:[1850,3700,0], imf:850, imfq:[2,2,4], ooii:4200, ooiip:[1,1,.5], bil:2000, bilp:[.5,1,0], priv:1500, privp:[.5,1,0], sh1:.5,
+  intra:1800, loc:[0,5000,0], intl:[0,4000,0], p:[.05,.02,.10], pref:.05, rho0:600, rho4:[600,400,1000],
   gamma:.5, theta:.6, kappa:.4, betaE:.1, betai:.1, betae:.3, a:.35, e4:.4, i0:25, eps0:20, R0:48653,
 };
 function adjustment(A) {
