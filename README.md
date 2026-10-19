@@ -4,7 +4,7 @@ Escenarios base, optimista y pesimista a partir de un modelo IS-LM-BP de dos sec
 
 ## Estructura
 - `src/engine.js`: motor trimestral (T4-2026 a T4-2027), port a JS de `python/build_xlsx.py`. Coincide con la planilla recalculada (diferencias menores a 0,1 millón por redondeo de la planilla de deuda).
-- `src/data/`: respuestas por unidad de shock (`set_A.json`, `set_B.json`) y deuda mensual (MECON, 30/06/2026).
+- `src/data/`: respuestas por unidad de shock (calibradas con sector transable de 32,5%, escala 4.725 US$ M por unidad) (`set_A.json`, `set_B.json`) y deuda mensual (MECON, 30/06/2026).
 - `python/`: scripts originales. `make_sets.py` recalibra los juegos; `build_xlsx.py 1 salida.xlsx sens.json` arma la planilla.
 
 ## Uso

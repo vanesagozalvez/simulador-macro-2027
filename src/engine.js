@@ -15,7 +15,8 @@ export const DEFAULTS = {
   m:[1158,1557,1671,2769,2596,1418,2162,768,473],
   saldo:[1850,3700,0], imf:850, imfq:[2,2,4], ooii:4200, ooiip:[1,1,.5], bil:2000, bilp:[.5,1,0], priv:1500, privp:[.5,1,0], sh1:.5,
   intra:1800, loc:[0,5000,0], intl:[0,4000,0], p:[.05,.02,.10], pref:.05, rho0:600, rho4:[600,400,1000],
-  gamma:.5, theta:.6, kappa:.4, betaE:.1, betai:.1, betae:.3, a:.35, e4:.4, i0:25, eps0:20, R0:48653,
+  gamma:.5, theta:.6, kappa:.2, betaE:.07, betai:.1, betae:.35, a:.6, e4:.4, i0:25, eps0:20, R0:48653,
+  xgap0:100 * SA.info.xgap, Yref:SA.Ytot, scale:SA.SCALE, emp0:100 + SA.P.lT * SA.P.YT00, // salen de la calibración (make_sets.py): brecha inicial de N (pp), producto total de referencia, US$ M por unidad anual, empleo de referencia
 };
 function adjustment(A) {
   if (A.selcap !== 2) return [0,0,0,0,0];
@@ -23,7 +24,7 @@ function adjustment(A) {
   return [0, ...[0,1,2,3].map(k => fm[k] - FMI_Q[k] + h14 * ORG_Q[k] / h15 - ORG_Q[k])];
 }
 export function run(A, s) {
-  const g = k => Array.isArray(A[k]) ? A[k][s] : A[k], S = A.sel === 1 ? SA : SB, { SCALE, Ytot } = SA, P = SA.P;
+  const g = k => Array.isArray(A[k]) ? A[k][s] : A[k], S = A.sel === 1 ? SA : SB, SCALE = A.scale, Ytot = A.Yref;
   const J = [1,2,3,4], z = () => [0,0,0,0,0], adj = adjustment(A);
   const sd = CAL.cap.map((c, j) => c + CAL.int[j] + adj[j]), bo = CAL.bop, sdTot = sum(sd.slice(1));
   const m = A.m, seas = [0,1,2].map(k => sum(m.slice(3 * k, 3 * k + 3))), avgm = sum(m) / 9, avgq = sum(m) / 3;
@@ -48,7 +49,7 @@ export function run(A, s) {
   const r = {}; OUT.forEach(o => r[o] = z().map((_, j) => sum(KEYS.map((k, i) => S.unit[k][o] * sh[i][j]))));
   const anc = z().map((_, j) => A.anc0 + (A.anc4 - A.anc0) * j / 4), q = r.dq.map(v => 1 + v);
   const i = r.di.map((v, j) => j ? A.i0 + 100 * v : A.i0), eps = pj.map((v, j) => j ? A.eps0 + 100 * A.e4 * (v - A.pref) : A.eps0);
-  const gap = r.dgap.map((v, j) => 100 * S.info.xgap + (j ? v : 0)), emp = r.dEmp.map(v => v / (100 + P.lT * P.YT00));
+  const gap = r.dgap.map((v, j) => A.xgap0 + (j ? v : 0)), emp = r.dEmp.map(v => v / A.emp0);
   const act = z().map((_, j) => j ? 100 * (1 + A.gtr) ** (j / 4) * (1 + r.dYtot[j] / Ytot) : 100);
   const piN = z(), E = z(), dlnE = z(), piT = z(), cpi = z(); piN[0] = A.pi0; E[0] = A.E0; cpi[0] = (1 - A.a) * A.pi0;
   for (const j of J) {

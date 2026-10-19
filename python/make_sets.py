@@ -4,7 +4,7 @@ import vm
 from vm import *
 def make(cT, chiw, tag):
     P = dict(vm.P0)
-    YN0 = 100.0; share_T = 0.40
+    YN0 = 100.0; share_T = 0.325
     P['YT00'] = YN0*share_T/(1-share_T); Ytot = YN0 + P['YT00']; GDP = 700000.0; SCALE = GDP/Ytot
     P['d'] = 0.384*Ytot; P['mbase'] = 0.18*Ytot; P['cT'] = cT; P['chiw'] = chiw
     IT0 = P['aT0'] + P['iota']*P['q0']; G0 = P['G0']; ST = 0.30*Ytot
