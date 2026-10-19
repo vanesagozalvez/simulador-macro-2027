@@ -1,12 +1,15 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Simulador macro Argentina 2027</title>
+<title>Simulador macro Argentina 2027</title><meta name="description" content="Escenarios macroeconómicos trimestrales de Argentina para 2027: modelo IS-LM-BP de dos sectores.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
-</head><body><main>
-<header><h1>Escenarios macro de Argentina, 2027</h1>
-<p>Modelo IS-LM-BP de dos sectores, trimestral. Los parámetros son ilustrativos, no estimados: los resultados dependen de los supuestos y no son pronósticos.</p></header>
-<section><h2>Supuestos</h2><div id="ctl"></div></section>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+</head><body>
+<header class="top"><div><p class="eyebrow">Modelo IS-LM-BP de dos sectores · trimestral</p><h1>Escenarios macro de Argentina, 2027</h1></div>
+<p class="note">Parámetros ilustrativos, no estimados. Los resultados dependen de los supuestos y no son pronósticos.</p></header>
+<div class="app">
+<aside id="panel" aria-label="Supuestos"><div class="ph"><h2>Supuestos</h2><button id="reset" type="button">Restablecer</button></div><div id="ctl"></div></aside>
+<main><div id="kpi"></div>
+<section><h2>Trayectorias trimestrales</h2><div id="legend"></div><div id="charts"></div></section>
 <section><h2>Comparación de escenarios</h2><div class="wrap" id="cmp"></div></section>
-<section><div class="bar"><h2>Detalle trimestral</h2><select id="sc"></select></div><div class="wrap" id="det"></div></section>
-<footer>Motor: port a JavaScript de <code>python/build_xlsx.py</code>. Para regenerar la planilla de Excel, ver el README.</footer>
-</main><script type="module" src="/src/main.js"></script></body></html>
+<section><div class="bar"><h2>Detalle trimestral</h2><div id="tabs" role="group" aria-label="Escenario"></div></div><div class="wrap" id="det"></div></section>
+<footer>Motor: port a JavaScript de <code>python/build_xlsx.py</code>. Los cambios se recalculan al instante en el navegador.</footer></main></div>
+<script type="module" src="/src/main.js"></script></body></html>
