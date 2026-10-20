@@ -1,5 +1,6 @@
 import './style.css';
 import { DEFAULTS, SCEN, run } from './engine.js';
+import { METODOLOGIA } from './metodologia.js';
 const A = structuredClone(DEFAULTS), $ = id => document.getElementById(id);
 const nf = (d = 0) => v => v.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const pc = d => v => (v * 100).toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d }) + '%';
@@ -12,7 +13,11 @@ const SEC = [
   { t: 'Generales', f: [['gtr', 'Crecimiento tendencial (%)', 100], ['pi0', 'Inflación inicial de N (% anual)', 1], ['E0', 'Tipo de cambio inicial ($/US$)', 1], ['anc4', 'Ancla de inflación T4-2027 (%)', 1]] },
   { t: 'Curva de Phillips', f: [['gamma', 'Inercia de la inflación (γ)', 1], ['theta', 'Peso de la inflación pasada (ϑ)', 1], ['kappa', 'Pendiente respecto de la brecha (κ)', 1], ['betaE', 'Traspaso de depreciación rezagada (β_E)', 1], ['betai', 'Costo financiero (β_i)', 1], ['betae', 'Expectativas de depreciación (β_ε)', 1], ['a', 'Peso de los transables en el IPC (a)', 1]] },
 ];
-const inp = (k, sc, i) => `<input type="number" step="any" inputmode="decimal" aria-label="${k}${i === undefined ? '' : ' ' + SCEN[i]}" data-k="${k}" ${i === undefined ? '' : `data-i="${i}"`} data-sc="${sc}" value="${+((i === undefined ? A[k] : A[k][i]) * sc).toFixed(4)}">`;
+// Límites de entrada (en las unidades que se muestran): no admiten valores negativos; las probabilidades y pesos tienen tope
+const LIM = { rho4: [0], p: [0, 100], pfac: [0], intl: [0], loc: [0], ondem: [0], pi0: [0], E0: [1], anc4: [0], gamma: [0, 1], theta: [0, 1], kappa: [0], betaE: [0], betai: [0], betae: [0], a: [0, 1] };
+const bad = (k, v) => { const l = LIM[k]; return !!l && (v < l[0] || (l[1] !== undefined && v > l[1])); };
+const lim = k => LIM[k] ? ` min="${LIM[k][0]}"${LIM[k][1] !== undefined ? ` max="${LIM[k][1]}"` : ''} title="${LIM[k][1] !== undefined ? `Entre ${LIM[k][0]} y ${LIM[k][1]}` : `Mínimo ${LIM[k][0]}`}"` : '';
+const inp = (k, sc, i) => `<input type="number" step="any" inputmode="decimal"${lim(k)} aria-label="${k}${i === undefined ? '' : ' ' + SCEN[i]}" data-k="${k}" ${i === undefined ? '' : `data-i="${i}"`} data-sc="${sc}" value="${+((i === undefined ? A[k] : A[k][i]) * sc).toFixed(4)}">`;
 function build() {
   $('ctl').innerHTML = SEC.map(s => `<details ${s.o ? 'open' : ''}><summary>${s.t}</summary><div class="body">` +
     (s.sel ? `<div class="row sel"><label class="sl">Coeficientes del modelo<select data-g="sel"><option value="1">Juego 1 (depreciación expansiva)</option><option value="2">Juego 2 (contractiva)</option></select></label></div>
@@ -23,10 +28,20 @@ function build() {
   $('tabs').innerHTML = SCEN.map((s, i) => `<button type="button" data-t="${i}" aria-pressed="${i === cur}">${s}</button>`).join('');
   $('legend').innerHTML = SCEN.map((s, i) => `<span><i style="background:${COL(i)}"></i>${s}</span>`).join('');
 }
+const put = (d, x) => { const v = x / +d.sc; d.i === undefined ? A[d.k] = v : A[d.k][+d.i] = v; };
 $('ctl').addEventListener('input', e => {
   const t = e.target, d = t.dataset;
-  if (d.g) A[d.g] = +t.value; else if (t.value !== '' && isFinite(+t.value)) { const v = +t.value / +d.sc; d.i === undefined ? A[d.k] = v : A[d.k][+d.i] = v; }
-  render();
+  if (d.g) { A[d.g] = +t.value; return render(); }
+  const x = +t.value; if (t.value === '' || !isFinite(x)) return;
+  const ko = bad(d.k, x); t.classList.toggle('bad', ko); t.setAttribute('aria-invalid', ko);
+  if (!ko) { put(d, x); render(); }   // un valor fuera de rango no se aplica
+});
+$('ctl').addEventListener('change', e => {   // al salir del campo: se corrige al límite más cercano
+  const t = e.target, d = t.dataset; if (d.g) return;
+  const l = LIM[d.k]; let x = +t.value;
+  if (t.value === '' || !isFinite(x)) x = (d.i === undefined ? A[d.k] : A[d.k][+d.i]) * +d.sc;
+  else if (l) x = Math.max(l[0], l[1] !== undefined ? Math.min(l[1], x) : x);
+  t.value = +x.toFixed(4); t.classList.remove('bad'); t.removeAttribute('aria-invalid'); put(d, x); render();
 });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = +b.dataset.t; $('tabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
 $('reset').onclick = () => { Object.assign(A, structuredClone(DEFAULTS)); build(); render(); };
@@ -64,3 +79,8 @@ function render() {
   $('det').innerHTML = `<table><thead><tr><th>Concepto</th>${QL.map(q => `<th>${q}</th>`).join('')}</tr></thead><tbody>${QROWS.map(([l, k, f]) => k ? `<tr><td>${l}</td>${r.q[k].map((v, j) => (!j && FLOW.includes(k)) ? '<td>–</td>' : cell(v, f)).join('')}</tr>` : gp(l, 6)).join('')}</tbody></table>`;
 }
 build(); render();
+// Solapas: Simulador / Metodología
+$('met').innerHTML = METODOLOGIA;
+function view(v) { $('sim').hidden = v !== 'sim'; $('met').hidden = v === 'sim'; $('nav').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); history.replaceState(null, '', v === 'met' ? '#metodologia' : location.pathname); scrollTo(0, 0); }
+$('nav').addEventListener('click', e => { const b = e.target.closest('button'); if (b) view(b.dataset.v); });
+if (location.hash === '#metodologia') view('met');

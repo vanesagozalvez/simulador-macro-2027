@@ -5,11 +5,13 @@
 </head><body>
 <header class="top"><div><p class="eyebrow">Modelo IS-LM-BP de dos sectores · trimestral</p><h1>Escenarios macro de Argentina, 2027</h1></div>
 <p class="note">Parámetros ilustrativos, no estimados. Los resultados dependen de los supuestos y no son pronósticos.</p></header>
-<div class="app">
+<nav id="nav" aria-label="Secciones"><button type="button" data-v="sim" aria-pressed="true">Simulador</button><button type="button" data-v="met" aria-pressed="false">Metodología</button></nav>
+<div class="app" id="sim">
 <aside id="panel" aria-label="Supuestos"><div class="ph"><h2>Supuestos</h2><button id="reset" type="button">Restablecer</button></div><div id="ctl"></div></aside>
 <main><div id="kpi"></div>
 <section><h2>Trayectorias trimestrales</h2><div id="legend"></div><div id="charts"></div></section>
 <section><h2>Comparación de escenarios</h2><div class="wrap" id="cmp"></div></section>
 <section><div class="bar"><h2>Detalle trimestral</h2><div id="tabs" role="group" aria-label="Escenario"></div></div><div class="wrap" id="det"></div></section>
 <footer>Motor: port a JavaScript de <code>python/build_xlsx.py</code>. Los cambios se recalculan al instante en el navegador.</footer></main></div>
+<div id="met" hidden></div>
 <script type="module" src="/src/main.js"></script></body></html>
