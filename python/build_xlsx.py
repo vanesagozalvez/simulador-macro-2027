@@ -46,6 +46,7 @@ lines = [
  'Las hojas Base, Optimista y Pesimista tienen la misma estructura. Cambie los supuestos en la hoja Supuestos (celdas azules) y todo se recalcula, salvo la hoja Coeficientes, que son valores del script.',
  'Limitaciones: el bloque macro usa un modelo lineal con parámetros ilustrativos (no estimados); no contiene la defensa del tipo de cambio por venta de reservas ni el régimen de techo de la banda; el escenario pesimista no incluye la caída del acuerdo con el FMI (ver nota en Supuestos). Las cifras son resultados condicionados a los supuestos, no pronósticos.',
  'Obligaciones negociables: ingresan US$ 4.400 millones pendientes de liquidación (T4-2026 y T1-2027) y las empresas demandan US$ 2.600 millones en T4-2026 y T1-2027 más 300 por trimestre en T2 a T4 de 2027 (base). El flujo neto se suma a las compras del BCRA y a las reservas; el reparto del ingreso entre T4-2026 y T1-2027 es un supuesto del analista calibrado para que el neto de 2027 sea +500. Los intereses de las ON pertenecen a la cuenta corriente: si el objetivo ya los contiene hay doble conteo (parámetro en Supuestos).',
+ 'Compra neta de dólares de personas humanas: dato por escenario en la hoja Supuestos (promedio mensual, US$ millones; positivo = compras netas, negativo = ventas netas). La diferencia con la referencia de calibración (2.250 por mes) entra como exceso de demanda de divisas en el bloque macro; no modifica automáticamente las compras del BCRA.',
  'Capital de organismos internacionales: la hoja Presupuesto_2027 convierte a dólares las amortizaciones del Cuadro 16 (FMI, por mes) y los totales del texto del informe (BID, otros y resto) y reemplaza el capital de la planilla MECON (no se suma) según el selector de la hoja Supuestos; el cuadro y el archivo del FMI no coinciden en los meses de pago.',
  'Ejemplo de lectura: en la hoja Comparativo, la fila Cobertura acumulada a septiembre indica el colchón en US$ millones antes de octubre de 2027, mes en el que se supone que no hay compras por las elecciones.',
 ]
@@ -71,21 +72,23 @@ def row(key, label, unit_, base, opt=None, pes=None, origin='USUARIO', note='', 
     put(S, f'F{r}', origin); put(S, f'G{r}', note, wrap=True); r += 1
 sec('Magnitudes generales')
 row('gdp', 'PBI 2026 en dólares', 'US$ millones', 700000, origin='USUARIO', note='Dato del usuario; se usa como escala fija del modelo para 2026 y 2027.')
-row('g26', 'Crecimiento 2026', '% anual', 0.021, origin='USUARIO', fmt=PCT)
+row('g26', 'Crecimiento 2026', '% anual', 0.015, origin='USUARIO', fmt=PCT)
 row('inf26', 'Inflación 2026', '% anual', 0.31, origin='USUARIO', fmt=PCT)
 row('ca26', 'Cuenta corriente 2026', '% del PBI', 0.006, origin='USUARIO', fmt=PCT2, note='Superávit; es la referencia respecto de la cual se miden los shocks de 2027.')
-row('xs', 'Exportaciones', '% del PBI', 0.25, origin='USUARIO', fmt=PCT)
-row('ms', 'Importaciones', '% del PBI', 0.15, origin='USUARIO', fmt=PCT, note='Con exportaciones de 25%, el peso del sector transable se toma como 40% del PBI total.')
-row('gtr', 'Crecimiento tendencial 2027', '% anual', 0.021, origin='ANALISTA', fmt=PCT, key_assump=True, note='Supuesto de continuidad con 2026; no dado por el usuario.')
-row('pistar', 'Inflación externa', '% anual', 0.03, origin='ANALISTA', fmt=PCT)
-row('E0', 'Tipo de cambio mayorista inicial (T4-2026)', '$ por US$', 1507, origin='ANALISTA', note='Cercano al valor de mediados de septiembre de 2026 según prensa; verificar.')
-row('pi0', 'Inflación del sector N inicial (anualizada)', '% anual', 33.0, origin='ANALISTA', fmt=NUM1, key_assump=True, note='Supuesto: ritmo reciente de servicios y regulados; no verificado.')
-row('anc0', 'Ancla de expectativas de inflación, T4-2026', '% anual', 28.0, origin='ANALISTA', fmt=NUM1)
+row('xs', 'Exportaciones', '% del PBI', 0.18, origin='USUARIO', fmt=PCT)
+row('ms', 'Importaciones', '% del PBI', 0.145, origin='USUARIO', fmt=PCT, note='Con exportaciones de 18% e importaciones de 14,5%, el peso del sector transable es 32,5% del PBI total (calibración vigente de los coeficientes).')
+row('gtr', 'Crecimiento tendencial 2027', '% anual', 0.003, origin='ANALISTA', fmt=PCT, key_assump=True, note='Supuesto de continuidad con 2026; no dado por el usuario.')
+row('pistar', 'Inflación externa', '% anual', 0.035, origin='ANALISTA', fmt=PCT)
+row('E0', 'Tipo de cambio mayorista inicial (T4-2026)', '$ por US$', 1530, origin='ANALISTA', note='Cercano al valor de mediados de septiembre de 2026 según prensa; verificar.')
+row('pi0', 'Inflación del sector N inicial (anualizada)', '% anual', 35.0, origin='ANALISTA', fmt=NUM1, key_assump=True, note='Supuesto: ritmo reciente de servicios y regulados; no verificado.')
+row('anc0', 'Ancla de expectativas de inflación, T4-2026', '% anual', 29.0, origin='ANALISTA', fmt=NUM1)
 row('anc4', 'Ancla de expectativas de inflación, T4-2027', '% anual', 18.0, origin='ANALISTA', fmt=NUM1)
 sec('Selector de coeficientes del bloque macro')
 row('sel', 'Juego de coeficientes (1 = calibración heredada; 2 = alternativa con depreciación contractiva)', 'número 1 o 2', SEL, origin='ANALISTA', fmt='0', key_assump=True, note='Juego 1: propensión a gastar del sector transable 0,40 e indexación salarial 0,60 (la depreciación es expansiva). Juego 2: 0,10 y 0,20 (la depreciación es contractiva). Es una decisión de calibración que debe validarse.')
 sec('Cuenta corriente y política')
 row('ca27', 'Cuenta corriente 2027', '% del PBI', 0.0, 0.005, -0.005, 'USUARIO', fmt=PCT2, key_assump=True, note='Base 0%, optimista +0,5%, pesimista −0,5%, dados por el usuario.')
+row('fae', 'Compra neta de dólares de personas humanas (promedio mensual)', 'US$ millones por mes', 2250, 2250, 2250, 'ANALISTA', fmt=NUM, key_assump=True, note='Positivo = compras netas; negativo = ventas netas. Se compara con la referencia de calibración (fila siguiente): la diferencia es un exceso (o defecto) de demanda de divisas que se suma a la cuenta corriente y a las ON en el shock s_psi. Con el valor de referencia no altera los resultados. No reduce automáticamente las compras del BCRA, que se cargan con el factor sobre el espejo.')
+row('faeref', 'Compra neta de dólares de personas humanas de referencia (calibración)', 'US$ millones por mes', 2250, origin='ANALISTA', fmt=NUM, note='Valor con el que se calibraron los coeficientes (FAE0 = 2.250 por mes en make_sets.py).')
 row('dtx', 'Baja trimestral de derechos de exportación', 'pp por trimestre', 0.75, origin='ANALISTA', fmt=NUM3, note='Derivado del cronograma del Decreto 423/2026 (soja de 24% a 21% hasta diciembre de 2027), repartido en forma lineal.')
 row('dtm', 'Baja trimestral del arancel efectivo de importación', 'pp por trimestre', 0.25, origin='ANALISTA', fmt=NUM3, note='Supuesto: apertura gradual; no hay cronograma verificado.')
 row('dG', 'Variación del gasto público (unidades del modelo)', 'unidades', 0.0, origin='ANALISTA', fmt=NUM3)
@@ -97,7 +100,7 @@ row('ondem', 'Demanda por pagos de ON en cada trimestre de T2, T3 y T4 de 2027',
 row('onca', '  fracción de esa demanda ya contenida en la cuenta corriente objetivo', '% de la demanda', 0.0, origin='ANALISTA', fmt=PCT, note='Los intereses de las ON son renta de inversión y pertenecen a la cuenta corriente. Si el objetivo de cuenta corriente ya los incluye, cargar aquí esa fracción para no contarlos dos veces. Por defecto 0%.')
 sec('Capital de organismos internacionales según el Presupuesto 2027 (Cuadro 16 y texto del informe)')
 row('selcap', 'Fuente del capital de organismos en los usos (1 = planilla MECON; 2 = Presupuesto 2027)', 'número 1 o 2', 2, origin='USUARIO', fmt='0', key_assump=True, note='Con 2 se reemplaza el capital de FMI y de organismos de la planilla MECON por el del Presupuesto 2027 (no se suma, para no contar dos veces); los intereses siguen siendo los de MECON.')
-row('fxpl', 'Tipo de cambio para convertir el Cuadro 16 a dólares', '$ por US$', 1778.8, origin='ANALISTA', fmt=NUM1, key_assump=True, note='Es el cociente entre los 7,84 billones del FMI y los US$4.407 millones de capital del FMI de la planilla MECON, de modo que el total del FMI no cambia y solo cambia el calendario. El Cuadro 16 no informa el tipo de cambio del Presupuesto; es editable.')
+row('fxpl', 'Tipo de cambio para convertir el Cuadro 16 a dólares', '$ por US$', 1530, origin='ANALISTA', fmt=NUM1, key_assump=True, note='Es el cociente entre los 7,84 billones del FMI y los US$4.407 millones de capital del FMI de la planilla MECON, de modo que el total del FMI no cambia y solo cambia el calendario. El Cuadro 16 no informa el tipo de cambio del Presupuesto; es editable.')
 row('bidpl', 'BID: amortización de capital 2027', 'billones de $', 2.0, origin='USUARIO', fmt=NUM1, note='Texto del informe (usuario).')
 row('otrospl', 'Otros préstamos: amortización de capital 2027', 'billones de $', 2.0, origin='USUARIO', fmt=NUM1)
 row('restopl', 'Resto de organismos multilaterales y bilaterales: amortización de capital 2027', 'billones de $', 2.8, origin='USUARIO', fmt=NUM1)
@@ -120,7 +123,7 @@ row('imfq', 'Trimestre del desembolso del FMI', 'número 1 a 4', 2, 2, 4, 'USUAR
 row('ooii', 'Organismos internacionales: programa 2027', 'US$ millones', 4200, origin='USUARIO')
 row('ooiip', '  % considerado', '% del programa', 1.0, 1.0, 0.5, 'USUARIO', fmt=PCT, note='Base 100% (usuario). Pesimista 50% (analista).')
 row('bil', 'Préstamo bilateral', 'US$ millones', 2000, origin='USUARIO')
-row('bilp', '  % considerado', '% del programa', 1.0, 1.0, 0.0, 'USUARIO', fmt=PCT, note='Pesimista 0% (analista).')
+row('bilp', '  % considerado', '% del programa', 0.5, 1.0, 0.0, 'USUARIO', fmt=PCT, note='Base 50% y pesimista 0% (analista).')
 row('priv', 'Privatizaciones: programa 2027', 'US$ millones', 1500, origin='USUARIO')
 row('privp', '  % considerado', '% del programa', 0.5, 1.0, 0.0, 'USUARIO', fmt=PCT, note='Base 50% (usuario). Optimista 100% y pesimista 0% (analista).')
 row('sh1', 'Reparto de organismos, bilateral y privatizaciones en T1', '% del total', 0.5, origin='USUARIO', fmt=PCT, note='Se reparten en los dos primeros trimestres (usuario); se supone mitad y mitad.')
@@ -130,8 +133,8 @@ row('intl', 'Emisión internacional de deuda', 'US$ millones', 0, 4000, 0, 'USUA
 sec('Riesgo y expectativas')
 row('p', 'Probabilidad de caída del acuerdo con el FMI (por trimestre)', 'probabilidad', 0.05, 0.02, 0.10, 'ANALISTA', fmt=PCT, key_assump=True, note='Es la probabilidad percibida; no modela la caída efectiva del acuerdo.')
 row('pref', 'Probabilidad de referencia', 'probabilidad', 0.05, origin='ANALISTA', fmt=PCT)
-row('rho0', 'Riesgo país inicial', 'puntos básicos', 636, origin='USUARIO', fmt=NUM, note='Valor del 1 de octubre de 2026 según fuentes consultadas.')
-row('rho4', 'Riesgo país a fin de 2027', 'puntos básicos', 636, 450, 900, 'ANALISTA', fmt=NUM, key_assump=True, note='Trayectoria lineal desde el valor inicial; propuesta del analista.')
+row('rho0', 'Riesgo país inicial', 'puntos básicos', 600, origin='USUARIO', fmt=NUM, note='Valor del 1 de octubre de 2026 según fuentes consultadas.')
+row('rho4', 'Riesgo país a fin de 2027', 'puntos básicos', 600, 400, 1000, 'ANALISTA', fmt=NUM, key_assump=True, note='Trayectoria lineal desde el valor inicial; propuesta del analista.')
 S.column_dimensions['A'].width = 58; S.column_dimensions['B'].width = 20
 for c_ in 'CDE': S.column_dimensions[c_].width = 14
 S.column_dimensions['F'].width = 12; S.column_dimensions['G'].width = 70
@@ -244,9 +247,9 @@ for k, (nm, lab, sz) in enumerate(order):
 put(Co, 'A43', 'Efecto de una depreciación real sobre la demanda de N (Θ^N): juego 1 = %.2f; juego 2 = %.2f' % (info['ThN'], infoB['ThN']), f_norm)
 put(Co, 'A3', 'Juego 1: calibración heredada (propensión a gastar del sector transable 0,40; indexación salarial 0,60).', f_bold)
 put(Co, 'A14', 'Parámetros de la curva de Phillips y de referencia', f_bold)
-phil = [('gamma', 'Inercia de la inflación (γ)', 0.5), ('theta', 'Peso de la inflación pasada en las expectativas (ϑ)', 0.6), ('kappa', 'Pendiente respecto de la brecha de N (κ)', 0.40),
-        ('betaE', 'Traspaso de la depreciación rezagada (β_E)', 0.10), ('betai', 'Costo financiero (β_i)', 0.10), ('betae', 'Expectativas de depreciación (β_ε)', 0.30),
-        ('a', 'Peso de los transables en el IPC (a)', 0.35), ('e4', 'Efecto de la probabilidad de caída en la depreciación esperada (ε_4)', 0.40),
+phil = [('gamma', 'Inercia de la inflación (γ)', 0.5), ('theta', 'Peso de la inflación pasada en las expectativas (ϑ)', 0.6), ('kappa', 'Pendiente respecto de la brecha de N (κ)', 0.20),
+        ('betaE', 'Traspaso de la depreciación rezagada (β_E)', 0.07), ('betai', 'Costo financiero (β_i)', 0.10), ('betae', 'Expectativas de depreciación (β_ε)', 0.35),
+        ('a', 'Peso de los transables en el IPC (a)', 0.60), ('e4', 'Efecto de la probabilidad de caída en la depreciación esperada (ε_4)', 0.40),
         ('i0', 'Tasa de referencia (% anual)', 25.0), ('eps0', 'Depreciación esperada de referencia (% anual)', 20.0), ('x0', 'Brecha inicial de N (pp)', 100*info['xgap']),
         ('Ytot', 'Producto total de referencia (unidades)', Ytot), ('Yref', 'Producto no transable de referencia (unidades)', 100.0), ('scale', 'US$ millones por unidad anual', SCALE),
         ('emp0', 'Empleo de referencia (unidades)', 100.0 + P1['lT']*P1['YT00'])]
@@ -311,6 +314,7 @@ for name, sc in scen:
     line('ca_ref', 'Cuenta corriente de referencia de 2026 (flujo trimestral)', 'US$ millones', [f"={sp('ca26', sc)}*{sp('gdp', sc)}/4"] * 5)
     line('on_in', 'Ingresos de dólares por liquidación de ON emitidas', 'US$ millones', [None, f"={sp('onq1', sc)}", 0, 0, 0], total='=SUM(D#:G#)')
     line('on_dem', 'Demanda de dólares en el MULC por pagos de ON', 'US$ millones', [None, f"={sp('ondemq1', sc)}/2*(1-{sp('onca', sc)})"] + [f"={sp('ondem', sc)}*(1-{sp('onca', sc)})"] * 3, total='=SUM(D#:G#)')
+    line('fae', 'Compra neta de dólares de personas humanas (flujo trimestral)', 'US$ millones', [None] + [f"=3*{sp('fae', sc)}" for c in 'DEFG'], total='=SUM(D#:G#)')
     line('on_net', 'Flujo neto de ON (ingresos menos demanda)', 'US$ millones', [None] + [f"={c}{R['on_in']}-{c}{R['on_dem']}" for c in 'DEFG'], total='=SUM(D#:G#)', font=f_bold)
     for c in 'DEFG': W[f"{c}{R['on_adj']}"] = f"={c}{R['on_net']}"; W[f"{c}{R['on_adj']}"].number_format = NUM; W[f"{c}{R['on_adj']}"].font = f_norm
     # ---- C. shocks
@@ -319,7 +323,7 @@ for name, sc in scen:
     line('rho', 'Riesgo país', 'pb', [f"={sp('rho0', sc)}"] + [f"={sp('rho0', sc)}+({sp('rho4', sc)}-{sp('rho0', sc)})*{k}/4" for k in (1, 2, 3, 4)], fmt=NUM)
     seas = {'D': f"(Supuestos!$C${SR['m1']}+Supuestos!$C${SR['m2']}+Supuestos!$C${SR['m3']})", 'E': f"(Supuestos!$C${SR['m4']}+Supuestos!$C${SR['m5']}+Supuestos!$C${SR['m6']})", 'F': f"(Supuestos!$C${SR['m7']}+Supuestos!$C${SR['m8']}+Supuestos!$C${SR['m9']})"}
     avgq = f"(SUM(Supuestos!$C${SR['m1']}:Supuestos!$C${SR['m9']})/3)"
-    line('s_psi', 'Exceso de demanda de divisas (CA menor que la referencia más demanda de ON)', 'unid. anual', [0] + [f"=(-({c}{R['ca_usd']}-{c}{R['ca_ref']})+({c}{R['on_dem']}-{c}{R['on_in']}))*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
+    line('s_psi', 'Exceso de demanda de divisas (CA menor que la referencia, demanda de ON y compra neta de personas humanas sobre la referencia)', 'unid. anual', [0] + [f"=(-({c}{R['ca_usd']}-{c}{R['ca_ref']})+({c}{R['on_dem']}-{c}{R['on_in']})+({c}{R['fae']}-3*{sp('faeref', sc)}))*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
     # compras subyacentes: se descuenta el patrón estacional de 2026 (T4 sin patrón)
     pur_und = {'D': f"(D{R['pur']}+D{R['on_adj']}-{sp('pfac', sc)}*({seas['D']}-{avgq}))", 'E': f"(E{R['pur']}+E{R['on_adj']}-{sp('pfac', sc)}*({seas['E']}-{avgq}))", 'F': f"(F{R['pur']}+F{R['on_adj']}-{sp('pfac', sc)}*({seas['F']}-{avgq}))", 'G': f"(G{R['pur']}+G{R['on_adj']})"}
     line('s_pur', 'Compras subyacentes del BCRA respecto de la referencia', 'unid. anual', [0] + [f"=({pur_und[c]}-{avgq})*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
@@ -378,6 +382,7 @@ put(Cm, 'A1', 'Comparación de escenarios, 2027', f_t)
 header(Cm, 3, ['Indicador', 'Unidad', 'Base', 'Optimista', 'Pesimista'])
 items = [
  ('Cuenta corriente 2027', '% del PBI', lambda n, R: f"={n}!H{R['ca_pct']}", PCT2),
+ ('Compra neta de dólares de personas humanas en 2027', 'US$ millones', lambda n, R: f"={n}!H{R['fae']}", NUM),
  ('Crecimiento del producto (aproximado)', '% anual', lambda n, R: f"={n}!H{R['growth']}", PCT),
  ('Inflación del IPC, promedio anualizado', '% anual', lambda n, R: f"={n}!H{R['cpi']}", '0.0'),
  ('Inflación del IPC en el T4-2027 (anualizada)', '% anual', lambda n, R: f"={n}!G{R['cpi']}", '0.0'),

@@ -8,7 +8,7 @@ const COL = i => `var(--c${i})`; let cur = 0;
 // [clave, etiqueta, escala de entrada, ¿por escenario?]
 const SEC = [
   { t: 'Modelo', o: 1, sel: 1, f: [] },
-  { t: 'Política y sector externo', o: 1, f: [['ca27', 'Cuenta corriente 2027 (% PBI)', 100, 1], ['rho4', 'Riesgo país a fin de 2027 (pb)', 1, 1], ['p', 'Prob. de caída del acuerdo con el FMI (%)', 100, 1], ['pfac', 'Factor de compras del BCRA', 1, 1]] },
+  { t: 'Política y sector externo', o: 1, f: [['ca27', 'Cuenta corriente 2027 (% PBI)', 100, 1], ['fae', 'Compra neta de dólares de personas humanas (US$ M por mes; negativo = ventas netas)', 1, 1], ['rho4', 'Riesgo país a fin de 2027 (pb)', 1, 1], ['p', 'Prob. de caída del acuerdo con el FMI (%)', 100, 1], ['pfac', 'Factor de compras del BCRA', 1, 1]] },
   { t: 'Financiamiento (US$ millones)', o: 1, f: [['saldo', 'Saldo del programa 2026', 1, 1], ['loc', 'Emisión local en dólares', 1, 1], ['intl', 'Emisión internacional', 1, 1], ['ondem', 'Pagos de ON por trimestre (T2 a T4)', 1, 1]] },
   { t: 'Generales', f: [['gtr', 'Crecimiento tendencial (%)', 100], ['pi0', 'Inflación inicial de N (% anual)', 1], ['E0', 'Tipo de cambio inicial ($/US$)', 1], ['anc4', 'Ancla de inflación T4-2027 (%)', 1]] },
   { t: 'Curva de Phillips', f: [['gamma', 'Inercia de la inflación (γ)', 1], ['theta', 'Peso de la inflación pasada (ϑ)', 1], ['kappa', 'Pendiente respecto de la brecha (κ)', 1], ['betaE', 'Traspaso de depreciación rezagada (β_E)', 1], ['betai', 'Costo financiero (β_i)', 1], ['betae', 'Expectativas de depreciación (β_ε)', 1], ['e4', 'Efecto de la prob. de caída del FMI en la depreciación esperada (ε₄)', 1], ['a', 'Peso de los transables en el IPC (a)', 1]] },
@@ -46,16 +46,16 @@ $('ctl').addEventListener('change', e => {   // al salir del campo: se corrige a
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = +b.dataset.t; $('tabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
 $('reset').onclick = () => { Object.assign(A, structuredClone(DEFAULTS)); build(); render(); };
 const ITEMS = [['Sector externo y reservas'],
-  ['Cuenta corriente', 'ca', pc(2)], ['Compras de divisas del BCRA (US$ M)', 'pur', nf()], ['Colchón acumulado a septiembre (US$ M)', 'cum3', nf()], ['Colchón acumulado a diciembre (US$ M)', 'cum4', nf()],
+  ['Cuenta corriente', 'ca', pc(2)], ['Compra neta de dólares de personas humanas en 2027 (US$ M)', 'fae', nf()], ['Compras de divisas del BCRA (US$ M)', 'pur', nf()], ['Colchón acumulado a septiembre (US$ M)', 'cum3', nf()], ['Colchón acumulado a diciembre (US$ M)', 'cum4', nf()],
   ['Compras adicionales necesarias en T4 (US$ M)', 'need', nf()], ['Variación de reservas en 2027 (US$ M)', 'dR', nf()], ['Reservas brutas a fin de 2027, ilustrativo (US$ M)', 'reservas', nf()],
   ['Flujo neto de ON (US$ M)', 'onNet', nf()], ['Usos totales en moneda extranjera (US$ M)', 'uses', nf()],
   ['Actividad y precios'],
   ['Crecimiento del producto', 'growth', pc(2)], ['Inflación IPC, promedio anualizado (%)', 'cpi', nf(1)], ['Inflación IPC T4-2027 (%)', 'cpiT4', nf(1)], ['Tipo de cambio nominal a fin de 2027 ($/US$)', 'E', nf()],
   ['Tipo de cambio real a fin de 2027 (ref. = 1)', 'q', nf(3)], ['Tasa de interés, promedio (%)', 'i', nf(1)], ['Empleo, desvío respecto de la referencia', 'emp', pc(2)], ['Riesgo país a fin de 2027 (pb)', 'rho', nf()]];
 const QL = ['T4-2026', 'T1-2027', 'T2-2027', 'T3-2027', 'T4-2027'];
-const QROWS = [['Balance en moneda extranjera'], ['Compras de divisas del BCRA (US$ M)', 'pur', nf()], ['Total fuentes (US$ M)', 'src', nf()], ['Total usos (US$ M)', 'uses', nf()], ['Resultado neto (US$ M)', 'net', nf()], ['Colchón acumulado (US$ M)', 'cum', nf()], ['Reservas brutas, ilustrativo (US$ M)', 'reservas', nf()],
+const QROWS = [['Balance en moneda extranjera'], ['Compra neta de dólares de personas humanas (US$ M)', 'fae', nf()], ['Compras de divisas del BCRA (US$ M)', 'pur', nf()], ['Total fuentes (US$ M)', 'src', nf()], ['Total usos (US$ M)', 'uses', nf()], ['Resultado neto (US$ M)', 'net', nf()], ['Colchón acumulado (US$ M)', 'cum', nf()], ['Reservas brutas, ilustrativo (US$ M)', 'reservas', nf()],
   ['Actividad y precios'], ['Actividad (T4-2026 = 100)', 'act', nf(1)], ['Inflación del sector N (% anual)', 'piN', nf(1)], ['Inflación IPC (% anual)', 'cpi', nf(1)], ['Tipo de cambio nominal ($/US$)', 'E', nf()], ['Tipo de cambio real (ref. = 1)', 'q', nf(3)], ['Tasa de interés (% anual)', 'i', nf(1)], ['Riesgo país (pb)', 'rho', nf()]];
-const FLOW = ['pur', 'src', 'uses', 'net', 'cum'];
+const FLOW = ['fae', 'pur', 'src', 'uses', 'net', 'cum'];
 const cell = (v, f) => `<td class="${v < 0 ? 'n' : ''}">${f(v)}</td>`, gp = (t, n) => `<tr class="gp"><td colspan="${n}">${t}</td></tr>`;
 function chart(title, k, f, from, R) {
   const W = 440, H = 200, L = 54, Rr = 56, T = 14, B = 26, js = [0, 1, 2, 3, 4].filter(j => j >= from), all = R.flatMap(r => js.map(j => r.q[k][j]));

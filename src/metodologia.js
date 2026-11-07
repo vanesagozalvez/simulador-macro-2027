@@ -26,6 +26,7 @@ ${dl([
 <h4>Cuenta corriente y política económica</h4>
 ${dl([
 ['Cuenta corriente 2027', 'Saldo de las cuentas con el exterior (bienes, servicios e intereses) como porcentaje del PBI. Positivo significa que entran más dólares de los que salen por estos conceptos.'],
+['Compra neta de dólares de personas humanas', 'Promedio mensual, en US$ millones, de los dólares que las personas compran (valor positivo) o venden (valor negativo) en neto. La referencia del modelo es de US$ 2.250 millones por mes. Un valor mayor aumenta la demanda de dólares y presiona sobre el tipo de cambio; uno menor la alivia. Los valores iniciales de los tres escenarios coinciden con esa referencia, por lo que no alteran los resultados hasta que se modifiquen.'],
 ['Baja de derechos de exportación y de aranceles', 'Recortes de 0,75 y 0,25 puntos porcentuales por trimestre. Abaratar exportar impulsa al sector transable. Abaratar importar presiona sobre la producción local y sobre los dólares.'],
 ['Variación del gasto público', 'Cambio del gasto fiscal en unidades del modelo (por defecto, cero). Más gasto expande la actividad y tiende a apreciar el tipo de cambio real.']])}
 <h4>Obligaciones negociables (ON) de empresas</h4>
@@ -76,6 +77,7 @@ ${dl([
 ['Actividad (T4-2026 = 100)', 'Índice del nivel de actividad trimestre a trimestre.']])}
 <h4>Dólares y reservas</h4>
 ${dl([
+['Compra neta de dólares de personas humanas', 'Total de 2027 (12 veces el promedio mensual cargado) y su distribución por trimestre. Es un dato de entrada que se muestra para facilitar la lectura.'],
 ['Compras de divisas del BCRA', 'Total de dólares que compra el Banco Central en 2027 con el factor elegido.'],
 ['Fuentes, usos y resultado neto', 'Dólares que entran, dólares que salen (capital e intereses de deuda, BOPREAL) y su diferencia en cada trimestre.'],
 ['Colchón acumulado (septiembre y diciembre)', 'Suma acumulada de los resultados netos. Muestra cuántos dólares sobran (positivo) o faltan (negativo) para cubrir los vencimientos.'],
@@ -90,6 +92,7 @@ ${ul([
 'El modelo teórico contempla el régimen en que el tipo de cambio llega al techo de la banda y el Banco Central lo defiende con reservas. Este simulador no lo incluye: no representa la venta de reservas para sostener el techo ni el cambio de comportamiento que ocurriría en ese caso.',
 'El modelo teórico trata la caída del acuerdo con el FMI como un evento con consecuencias bruscas (desaparece el financiamiento asociado y salta la prima de riesgo). El simulador no lo incluye: el escenario pesimista solo eleva la probabilidad percibida de caída, sin que ocurra.',
 'El peso de los transables en el IPC (60 %) es una definición propia del simulador, no estimada. Si se cambia, cambia cuánto se traslada una depreciación a los precios al consumidor.',
+'La compra neta de dólares de personas humanas actúa sobre la demanda de dólares del bloque macro, pero no reduce automáticamente las compras del Banco Central, que se cargan por separado con el factor de compras.',
 'Las reservas son un cálculo ilustrativo, y los datos cargados por el usuario no fueron verificados por el analista.',
 'Las cifras son resultados condicionados a los supuestos, <strong>no pronósticos</strong>.'])}
 </article>`;

@@ -9,7 +9,7 @@ const FMI_PRES = [1.33,.58,0,1.48,0,0,2.25,.62,0,1.58,0,0];
 export const SCEN = ['Base','Optimista','Pesimista'];
 // Parámetros con 3 valores = [base, optimista, pesimista]
 export const DEFAULTS = {
-  sel:2, selcap:2, gdp:700000, ca26:.006, ca27:[0,.005,-.005], gtr:.003, pistar:.035, E0:1530, pi0:35, anc0:29, anc4:18,
+  sel:2, selcap:2, fae:[2250,2250,2250], faeRef:2250, /* compra neta de dólares de personas humanas (US$ M por mes, por escenario) y su referencia de calibración (make_sets.py) */ gdp:700000, ca26:.006, ca27:[0,.005,-.005], gtr:.003, pistar:.035, E0:1530, pi0:35, anc0:29, anc4:18,
   dtx:.75, dtm:.25, dG:0, onq1:2700, ondemq1:2600, ondem:[300,180,420], onca:0,
   fxpl:1530, bidpl:2, otrospl:2, restopl:2.8, pfac:[1,1.15,.75], oct27:0,
   m:[1158,1557,1671,2769,2596,1418,2162,768,473],
@@ -43,7 +43,7 @@ export function run(A, s) {
   const caP = [A.ca26, ...J.map(() => g('ca27'))], caUsd = caP.map(v => v * A.gdp / 4), caRef = A.ca26 * A.gdp / 4;
   const rho = z().map((_, j) => A.rho0 + (g('rho4') - A.rho0) * j / 4), pj = [A.pref, ...J.map(() => g('p'))];
   const und = j => f.pur[j] + onNet[j] - (j < 4 ? g('pfac') * (seas[j - 1] - avgq) : 0);
-  const sh = [ z().map((_, j) => j ? (-(caUsd[j] - caRef) + (onDem[j] - onIn[j])) * 4 / SCALE : 0),
+  const sh = [ z().map((_, j) => j ? (-(caUsd[j] - caRef) + (onDem[j] - onIn[j]) + 3 * (g('fae') - A.faeRef)) * 4 / SCALE : 0),
     z().map((_, j) => j ? (und(j) - avgq) * 4 / SCALE : 0), pj.map((v, j) => j ? (v - A.pref) * 100 : 0), rho.map((v, j) => j ? (v - A.rho0) / 100 : 0),
     z().map((_, j) => A.dtx * j), z().map((_, j) => A.dtm * j), z().map((_, j) => j ? A.dG : 0), z()];
   const r = {}; OUT.forEach(o => r[o] = z().map((_, j) => sum(KEYS.map((k, i) => S.unit[k][o] * sh[i][j]))));
@@ -58,7 +58,7 @@ export function run(A, s) {
     dlnE[j] = 400 * Math.log(E[j] / E[j-1]); piT[j] = dlnE[j] + A.pistar * 100; cpi[j] = A.a * piT[j] + (1 - A.a) * piN[j];
   }
   const T = v => sum(v.slice(1)), avg = v => T(v) / 4;
-  return { q: { pur, src, uses, net, cum, dRc, reservas, act, piN, E, cpi, q, i, emp, gap, rho }, y: {
-    ca: g('ca27'), growth: (1 + A.gtr) * (1 + avg(r.dYtot) / Ytot) - 1, cpi: avg(cpi), cpiT4: cpi[4], E: E[4], q: q[4], i: avg(i), emp: avg(emp), rho: rho[4],
+  return { q: { fae: z().map((_, j) => j ? 3 * g('fae') : 0), pur, src, uses, net, cum, dRc, reservas, act, piN, E, cpi, q, i, emp, gap, rho }, y: {
+    ca: g('ca27'), fae: 12 * g('fae'), growth: (1 + A.gtr) * (1 + avg(r.dYtot) / Ytot) - 1, cpi: avg(cpi), cpiT4: cpi[4], E: E[4], q: q[4], i: avg(i), emp: avg(emp), rho: rho[4],
     pur: T(pur), cum3: cum[3], cum4: cum[4], need: Math.max(0, -cum[4]), dR: dRc[4], reservas: reservas[4], onNet: T(onNet), uses: T(uses) } };
 }
