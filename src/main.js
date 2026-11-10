@@ -4,17 +4,17 @@ import { METODOLOGIA } from './metodologia.js';
 const A = structuredClone(DEFAULTS), $ = id => document.getElementById(id);
 const nf = (d = 0) => v => v.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const pc = d => v => (v * 100).toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d }) + '%';
-const COL = i => `var(--c${i})`; let cur = 0;
+const COL = i => `var(--c${i})`; let cur = 0, curCf = 0;
 // [clave, etiqueta, escala de entrada, ¿por escenario?]
 const SEC = [
   { t: 'Modelo', o: 1, sel: 1, f: [] },
   { t: 'Política y sector externo', o: 1, f: [['ca27', 'Cuenta corriente 2027 (% PBI)', 100, 1], ['fae', 'Compra neta de dólares de personas humanas (US$ M por mes; negativo = ventas netas)', 1, 1], ['rho4', 'Riesgo país a fin de 2027 (pb)', 1, 1], ['p', 'Prob. de caída del acuerdo con el FMI (%)', 100, 1], ['pfac', 'Factor de compras del BCRA', 1, 1]] },
-  { t: 'Financiamiento (US$ millones)', o: 1, f: [['saldo', 'Saldo del programa 2026', 1, 1], ['loc', 'Emisión local en dólares', 1, 1], ['intl', 'Emisión internacional', 1, 1], ['ondem', 'Pagos de ON por trimestre (T2 a T4)', 1, 1]] },
+  { t: 'Financiamiento (US$ millones)', o: 1, f: [['saldo', 'Saldo del programa 2026', 1, 1], ['loc', 'Emisión local en dólares', 1, 1], ['intl', 'Emisión internacional', 1, 1], ['u1', 'Pagos de utilidades y dividendos, trimestre 1 (US$ M)', 1, 1], ['u2', 'Pagos de utilidades y dividendos, trimestre 2 (US$ M)', 1, 1], ['u3', 'Pagos de utilidades y dividendos, trimestre 3 (US$ M)', 1, 1]] },
   { t: 'Generales', f: [['gtr', 'Crecimiento tendencial (%)', 100], ['pi0', 'Inflación inicial de N (% anual)', 1], ['E0', 'Tipo de cambio inicial ($/US$)', 1], ['anc4', 'Ancla de inflación T4-2027 (%)', 1]] },
   { t: 'Curva de Phillips', f: [['gamma', 'Inercia de la inflación (γ)', 1], ['theta', 'Peso de la inflación pasada (ϑ)', 1], ['kappa', 'Pendiente respecto de la brecha (κ)', 1], ['betaE', 'Traspaso de depreciación rezagada (β_E)', 1], ['betai', 'Costo financiero (β_i)', 1], ['betae', 'Expectativas de depreciación (β_ε)', 1], ['e4', 'Efecto de la prob. de caída del FMI en la depreciación esperada (ε₄)', 1], ['a', 'Peso de los transables en el IPC (a)', 1]] },
 ];
 // Límites de entrada (en las unidades que se muestran): no admiten valores negativos; las probabilidades y pesos tienen tope
-const LIM = { rho4: [0], p: [0, 100], pfac: [0], intl: [0], loc: [0], ondem: [0], pi0: [0], E0: [1], anc4: [0], gamma: [0, 1], theta: [0, 1], kappa: [0], betaE: [0], betai: [0], betae: [0], e4: [0], a: [0, 1] };
+const LIM = { rho4: [0], p: [0, 100], pfac: [0], intl: [0], loc: [0], u1: [0], u2: [0], u3: [0], pi0: [0], E0: [1], anc4: [0], gamma: [0, 1], theta: [0, 1], kappa: [0], betaE: [0], betai: [0], betae: [0], e4: [0], a: [0, 1] };
 const bad = (k, v) => { const l = LIM[k]; return !!l && (v < l[0] || (l[1] !== undefined && v > l[1])); };
 const lim = k => LIM[k] ? ` min="${LIM[k][0]}"${LIM[k][1] !== undefined ? ` max="${LIM[k][1]}"` : ''} title="${LIM[k][1] !== undefined ? `Entre ${LIM[k][0]} y ${LIM[k][1]}` : `Mínimo ${LIM[k][0]}`}"` : '';
 const inp = (k, sc, i) => `<input type="number" step="any" inputmode="decimal"${lim(k)} aria-label="${k}${i === undefined ? '' : ' ' + SCEN[i]}" data-k="${k}" ${i === undefined ? '' : `data-i="${i}"`} data-sc="${sc}" value="${+((i === undefined ? A[k] : A[k][i]) * sc).toFixed(4)}">`;
@@ -26,6 +26,7 @@ function build() {
     s.f.map(([k, l, sc, per]) => per ? `<div class="row"><span class="l">${l}</span>${[0, 1, 2].map(i => inp(k, sc, i)).join('')}</div>`
       : `<div class="row one"><span class="l">${l}</span>${inp(k, sc)}</div>`).join('') + '</div></details>').join('');
   $('tabs').innerHTML = SCEN.map((s, i) => `<button type="button" data-t="${i}" aria-pressed="${i === cur}">${s}</button>`).join('');
+  $('cftabs').innerHTML = SCEN.map((s, i) => `<button type="button" data-t="${i}" aria-pressed="${i === curCf}">${s}</button>`).join('');
   $('legend').innerHTML = SCEN.map((s, i) => `<span><i style="background:${COL(i)}"></i>${s}</span>`).join('');
 }
 const put = (d, x) => { const v = x / +d.sc; d.i === undefined ? A[d.k] = v : A[d.k][+d.i] = v; };
@@ -43,19 +44,20 @@ $('ctl').addEventListener('change', e => {   // al salir del campo: se corrige a
   else if (l) x = Math.max(l[0], l[1] !== undefined ? Math.min(l[1], x) : x);
   t.value = +x.toFixed(4); t.classList.remove('bad'); t.removeAttribute('aria-invalid'); put(d, x); render();
 });
+$('cftabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; curCf = +b.dataset.t; $('cftabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderCF(); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = +b.dataset.t; $('tabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); });
 $('reset').onclick = () => { Object.assign(A, structuredClone(DEFAULTS)); build(); render(); };
 const ITEMS = [['Sector externo y reservas'],
   ['Cuenta corriente', 'ca', pc(2)], ['Compra neta de dólares de personas humanas en 2027 (US$ M)', 'fae', nf()], ['Compras de divisas del BCRA (US$ M)', 'pur', nf()], ['Colchón acumulado a septiembre (US$ M)', 'cum3', nf()], ['Colchón acumulado a diciembre (US$ M)', 'cum4', nf()],
   ['Compras adicionales necesarias en T4 (US$ M)', 'need', nf()], ['Variación de reservas en 2027 (US$ M)', 'dR', nf()], ['Reservas brutas a fin de 2027, ilustrativo (US$ M)', 'reservas', nf()],
-  ['Flujo neto de ON (US$ M)', 'onNet', nf()], ['Usos totales en moneda extranjera (US$ M)', 'uses', nf()],
+  ['Pagos de utilidades y dividendos en 2027 (US$ M)', 'div', nf()], ['Flujo neto de ON (US$ M)', 'onNet', nf()], ['Usos totales en moneda extranjera (US$ M)', 'uses', nf()],
   ['Actividad y precios'],
   ['Crecimiento del producto', 'growth', pc(2)], ['Inflación IPC, promedio anualizado (%)', 'cpi', nf(1)], ['Inflación IPC T4-2027 (%)', 'cpiT4', nf(1)], ['Tipo de cambio nominal a fin de 2027 ($/US$)', 'E', nf()],
   ['Tipo de cambio real a fin de 2027 (ref. = 1)', 'q', nf(3)], ['Tasa de interés, promedio (%)', 'i', nf(1)], ['Empleo, desvío respecto de la referencia', 'emp', pc(2)], ['Riesgo país a fin de 2027 (pb)', 'rho', nf()]];
 const QL = ['T4-2026', 'T1-2027', 'T2-2027', 'T3-2027', 'T4-2027'];
-const QROWS = [['Balance en moneda extranjera'], ['Compra neta de dólares de personas humanas (US$ M)', 'fae', nf()], ['Compras de divisas del BCRA (US$ M)', 'pur', nf()], ['Total fuentes (US$ M)', 'src', nf()], ['Total usos (US$ M)', 'uses', nf()], ['Resultado neto (US$ M)', 'net', nf()], ['Colchón acumulado (US$ M)', 'cum', nf()], ['Reservas brutas, ilustrativo (US$ M)', 'reservas', nf()],
+const QROWS = [['Balance en moneda extranjera'], ['Compra neta de dólares de personas humanas (US$ M)', 'fae', nf()], ['Pagos de utilidades y dividendos (US$ M)', 'div', nf()], ['Compras de divisas del BCRA (US$ M)', 'pur', nf()], ['Total fuentes (US$ M)', 'src', nf()], ['Total usos (US$ M)', 'uses', nf()], ['Resultado neto (US$ M)', 'net', nf()], ['Colchón acumulado (US$ M)', 'cum', nf()], ['Reservas brutas, ilustrativo (US$ M)', 'reservas', nf()],
   ['Actividad y precios'], ['Actividad (T4-2026 = 100)', 'act', nf(1)], ['Inflación del sector N (% anual)', 'piN', nf(1)], ['Inflación IPC (% anual)', 'cpi', nf(1)], ['Tipo de cambio nominal ($/US$)', 'E', nf()], ['Tipo de cambio real (ref. = 1)', 'q', nf(3)], ['Tasa de interés (% anual)', 'i', nf(1)], ['Riesgo país (pb)', 'rho', nf()]];
-const FLOW = ['fae', 'pur', 'src', 'uses', 'net', 'cum'];
+const FLOW = ['div', 'fae', 'pur', 'src', 'uses', 'net', 'cum'];
 const cell = (v, f) => `<td class="${v < 0 ? 'n' : ''}">${f(v)}</td>`, gp = (t, n) => `<tr class="gp"><td colspan="${n}">${t}</td></tr>`;
 function chart(title, k, f, from, R) {
   const W = 440, H = 200, L = 54, Rr = 56, T = 14, B = 26, js = [0, 1, 2, 3, 4].filter(j => j >= from), all = R.flatMap(r => js.map(j => r.q[k][j]));
@@ -75,12 +77,25 @@ function render() {
     <dt>Crecimiento</dt><dd>${pc(2)(y.growth)}</dd><dt>Tipo de cambio, fin 2027</dt><dd>$ ${nf()(y.E)}</dd><dt>Reservas, fin 2027</dt><dd>US$ ${nf()(y.reservas)} M</dd><dt>Compras extra en T4</dt><dd>US$ ${nf()(y.need)} M</dd></dl></article>`).join('');
   $('charts').innerHTML = [['Inflación IPC (% anual)', 'cpi', nf(0), 0], ['Tipo de cambio nominal ($/US$)', 'E', nf(0), 0], ['Colchón acumulado (US$ M)', 'cum', nf(0), 1], ['Actividad (T4-2026 = 100)', 'act', nf(1), 0]].map(c => chart(...c.slice(0, 1), c[1], c[2], c[3], R)).join('');
   $('cmp').innerHTML = `<table><thead><tr><th>Indicador</th>${SCEN.map((s, i) => `<th><span class="d" style="background:${COL(i)}"></span>${s}</th>`).join('')}</tr></thead><tbody>${ITEMS.map(([l, k, f]) => k ? `<tr><td>${l}</td>${Y.map(y => cell(y[k], f)).join('')}</tr>` : gp(l, 4)).join('')}</tbody></table>`;
+  renderCF(R);
   const r = R[cur];
   $('det').innerHTML = `<table><thead><tr><th>Concepto</th>${QL.map(q => `<th>${q}</th>`).join('')}</tr></thead><tbody>${QROWS.map(([l, k, f]) => k ? `<tr><td>${l}</td>${r.q[k].map((v, j) => (!j && FLOW.includes(k)) ? '<td>–</td>' : cell(v, f)).join('')}</tr>` : gp(l, 6)).join('')}</tbody></table>`;
 }
-build(); render();
-// Solapas: Simulador / Metodología
+// Cuenta financiera cambiaria estimada (solapa propia)
+const CFROWS = [['Sector público'], ['Desembolsos de organismos internacionales', 'ooii'], ['Desembolsos del FMI', 'imf'], ['Préstamo bilateral', 'bil'], ['Emisión de deuda local en dólares', 'loc'], ['Emisión internacional de deuda', 'intl'],
+  ['Amortizaciones de capital, netas de roll over intra sector público', 'cap'], ['BOPREAL Serie 1 (capital)', 'bopreal'], ['Subtotal sector público', 'sP', 1],
+  ['Sector privado'], ['Privatizaciones (inversión directa)', 'priv'], ['Liquidación de ON ya emitidas', 'onIn'], ['Pagos de capital de ON', 'onPay'], ['Pagos de utilidades y dividendos', 'div'], ['Formación de activos externos de personas humanas', 'fae'], ['Subtotal sector privado', 'sV', 1],
+  ['Cuenta financiera cambiaria estimada', 'cf', 1], ['Cierre con las demás variables del modelo'], ['Cuenta corriente (supuesto del escenario)', 'cc'], ['Variación de reservas del modelo', 'dR'], ['Otros flujos financieros y errores y omisiones (partida de cierre implícita)', 'resid']];
+const CFQ = ['T1-2027', 'T2-2027', 'T3-2027', 'T4-2027', 'Total 2027'], tot4 = a => a.slice(1).reduce((x, y) => x + y, 0);
+function renderCF(R = SCEN.map((_, i) => run(A, i))) {
+  const row = (l, k, b, v) => `<tr class="${b ? 'tt' : ''}"><td>${l}</td>${v.map(x => cell(x, nf())).join('')}</tr>`;
+  $('cfsum').innerHTML = `<table><thead><tr><th>Total 2027 (US$ millones)</th>${SCEN.map((s, i) => `<th><span class="d" style="background:${COL(i)}"></span>${s}</th>`).join('')}</tr></thead><tbody>${CFROWS.map(([l, k, b]) => k ? row(l, k, b, R.map(r => tot4(r.cf[k]))) : gp(l, 4)).join('')}</tbody></table>`;
+  const c = R[curCf].cf;
+  $('cfdet').innerHTML = `<table><thead><tr><th>${SCEN[curCf]} (US$ millones)</th>${CFQ.map(q => `<th>${q}</th>`).join('')}</tr></thead><tbody>${CFROWS.map(([l, k, b]) => k ? row(l, k, b, [...c[k].slice(1), tot4(c[k])]) : gp(l, 6)).join('')}</tbody></table>`;
+}
+// Solapas: Simulador / Cuenta financiera / Metodología
 $('met').innerHTML = METODOLOGIA;
-function view(v) { $('sim').hidden = v !== 'sim'; $('met').hidden = v === 'sim'; $('nav').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); history.replaceState(null, '', v === 'met' ? '#metodologia' : location.pathname); scrollTo(0, 0); }
+function view(v) { $('sim').hidden = v !== 'sim'; $('cf').hidden = v !== 'cf'; $('met').hidden = v !== 'met'; $('nav').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); history.replaceState(null, '', v === 'met' ? '#metodologia' : v === 'cf' ? '#cuenta-financiera' : location.pathname); scrollTo(0, 0); }
 $('nav').addEventListener('click', e => { const b = e.target.closest('button'); if (b) view(b.dataset.v); });
-if (location.hash === '#metodologia') view('met');
+if (location.hash === '#metodologia') view('met'); else if (location.hash === '#cuenta-financiera') view('cf');
+build(); render();

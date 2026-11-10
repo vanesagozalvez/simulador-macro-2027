@@ -32,7 +32,8 @@ ${dl([
 <h4>Obligaciones negociables (ON) de empresas</h4>
 ${dl([
 ['Liquidación pendiente de ON ya emitidas', 'Dólares de emisiones de empresas que todavía deben ingresar al mercado de cambios. US$ 2.700 millones llegarían en el primer trimestre de 2027.'],
-['Pagos de ON', 'Dólares que las empresas necesitan para pagar esas deudas. La estimación del BCRA es de US$ 2.600 millones entre el cuarto trimestre de 2026 y el primero de 2027 (el simulador asigna la mitad al primer trimestre de 2027), más el valor por trimestre que se cargue de T2 a T4. Un pago mayor reduce los dólares disponibles.']])}
+['Pagos de ON (dato fijo, no editable)', 'Vencimientos en dólares de obligaciones negociables, tomados de la planilla de pagos por mes y empresa: US$ 1.265 millones en el primer trimestre de 2027, 1.903 en el segundo, 2.432 en el tercero y 1.543 en el cuarto (7.143 en el año). Son los mismos en los tres escenarios. Los pagos de noviembre y diciembre de 2026 (US$ 1.297 millones) corresponden al trimestre de partida y no entran en 2027. Un pago mayor reduce los dólares disponibles.'],
+['Pagos de utilidades y dividendos (trimestres 1, 2 y 3)', 'Dólares que las empresas giran al exterior en concepto de utilidades y dividendos, en US$ millones por trimestre, un valor por escenario. Son una demanda adicional de divisas: reducen las compras netas del Banco Central de la misma manera que los pagos de ON y presionan sobre el tipo de cambio. Los valores iniciales son cero: hay que cargarlos.']])}
 <h4>Capital de organismos internacionales</h4>
 ${dl([
 ['Fuente del capital de organismos', 'Se elige entre la planilla de deuda del Ministerio de Economía (MECON) y los montos del Presupuesto 2027. La elegida reemplaza a la otra; no se suman.'],
@@ -83,16 +84,25 @@ ${dl([
 ['Colchón acumulado (septiembre y diciembre)', 'Suma acumulada de los resultados netos. Muestra cuántos dólares sobran (positivo) o faltan (negativo) para cubrir los vencimientos.'],
 ['Compras adicionales necesarias en T4', 'Si el colchón de diciembre es negativo, cuánto tendría que comprar de más el Banco Central para cerrar la brecha. Es cero si no hace falta.'],
 ['Variación de reservas y reservas brutas', 'Cambio de las reservas en el año y su nivel final, partiendo de US$ 48.653 millones. Es una cifra ilustrativa que ignora otros movimientos.'],
+['Pagos de utilidades y dividendos', 'Total de 2027 que resulta de los tres trimestres cargados.'],
 ['Flujo neto de ON y usos totales', 'Ingresos menos pagos de obligaciones negociables, y todas las salidas de dólares por deuda en el año.']])}
-<h3>4. Cómo leer los resultados</h3>
+<h3>4. Cuenta financiera cambiaria estimada</h3>
+<p>La solapa <em>Cuenta financiera</em> ordena, trimestre a trimestre de 2027 y para cada escenario, los flujos de capital y financieros en dólares que resultan de los supuestos del simulador. El signo es el de un balance cambiario: <strong>positivo es ingreso neto de divisas y negativo es salida neta</strong>. Tiene dos bloques.</p>
+${dl([
+['Sector público', 'Desembolsos de organismos internacionales, del FMI y bilaterales, emisiones de deuda local e internacional, amortizaciones de capital (planilla MECON o Presupuesto 2027, según el selector) netas del roll over intra sector público, y capital del BOPREAL Serie 1. Los intereses no se incluyen, porque pertenecen a la cuenta corriente. El saldo del programa 2026 tampoco, porque es caja que ya existía y no un flujo del año.'],
+['Sector privado', 'Privatizaciones (inversión directa), liquidación de ON ya emitidas, pagos de capital de ON, pagos de utilidades y dividendos y formación de activos externos de personas humanas (el signo es el opuesto a la compra neta cargada: comprar dólares es una salida).'],
+['Cierre con el resto del modelo', 'Se muestran la cuenta corriente supuesta y la variación de reservas que calcula el módulo de dólares. La última fila es una <em>partida de cierre implícita</em>: lo que tendrían que aportar otros flujos financieros no modelados (deuda privada, inversión extranjera, cartera) y los errores y omisiones para que cuenta corriente más cuenta financiera coincidan con la variación de reservas. Un valor grande indica que los supuestos de compras del Banco Central, de dolarización y de cuenta corriente exigen financiamiento adicional que el modelo no explica.']])}
+<p>Los pagos de utilidades y dividendos se incluyen en este bloque porque son una demanda de divisas, aunque en una balanza de pagos formal forman parte de la renta de la inversión, es decir, de la cuenta corriente. Si el objetivo de cuenta corriente ya los contiene, se estarían contando dos veces.</p>
+<h3>5. Cómo leer los resultados</h3>
 <p class="callout">Lo importante es comparar escenarios entre sí y ver qué supuesto mueve cada resultado, no leer una cifra aislada. Por ejemplo, un colchón negativo en el escenario pesimista no es una predicción de crisis. Señala que, con esos supuestos de financiamiento y compras, los dólares no alcanzarían a cubrir los vencimientos y habría que conseguir más.</p>
-<h3>5. Limitaciones</h3>
+<h3>6. Limitaciones</h3>
 ${ul([
 'El modelo es lineal y sus parámetros son <strong>ilustrativos, no estimados</strong> con datos históricos. Varios de ellos (el costo financiero, las expectativas de depreciación, el peso de los transables y el efecto de la probabilidad de caída del FMI) no tienen todavía una estimación empírica en la literatura económica para la Argentina, y por eso conviene probarlos con distintos valores.',
 'El modelo teórico contempla el régimen en que el tipo de cambio llega al techo de la banda y el Banco Central lo defiende con reservas. Este simulador no lo incluye: no representa la venta de reservas para sostener el techo ni el cambio de comportamiento que ocurriría en ese caso.',
 'El modelo teórico trata la caída del acuerdo con el FMI como un evento con consecuencias bruscas (desaparece el financiamiento asociado y salta la prima de riesgo). El simulador no lo incluye: el escenario pesimista solo eleva la probabilidad percibida de caída, sin que ocurra.',
 'El peso de los transables en el IPC (60 %) es una definición propia del simulador, no estimada. Si se cambia, cambia cuánto se traslada una depreciación a los precios al consumidor.',
 'La compra neta de dólares de personas humanas actúa sobre la demanda de dólares del bloque macro, pero no reduce automáticamente las compras del Banco Central, que se cargan por separado con el factor de compras.',
+'La cuenta financiera estimada incluye solo los componentes que el modelo representa; la partida de cierre es un residuo y no un dato observado.',
 'Las reservas son un cálculo ilustrativo, y los datos cargados por el usuario no fueron verificados por el analista.',
 'Las cifras son resultados condicionados a los supuestos, <strong>no pronósticos</strong>.'])}
 </article>`;

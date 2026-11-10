@@ -1,5 +1,6 @@
 // Motor del simulador: port a JS de la lógica de build_xlsx.py (hojas Base/Optimista/Pesimista).
-import SA from './data/set_A.json'; import SB from './data/set_B.json'; import DM from './data/deuda_mensual.json';
+import SA from './data/set_A.json'; import SB from './data/set_B.json'; import DM from './data/deuda_mensual.json'; import PON from './data/pagos_on.json';
+const ON_Q = PON.trimestral_2027;   // pagos de ON de 2027 por trimestre (US$ M), según el archivo de pagos por mes y empresa
 const sum = a => a.reduce((x, y) => x + y, 0), q3 = v => [0, 3, 6, 9].map(a => sum(v.slice(a, a + 3)));
 const KEYS = ['dPsi','dPur','dp','drho','dtx','dtm','dG','dYT0'], OUT = ['dYN','di','dq','dYtot','dEmp','dgap'];
 const FMI_Q = q3(DM.cap27.fmi.slice(0, 12));
@@ -10,7 +11,7 @@ export const SCEN = ['Base','Optimista','Pesimista'];
 // Parámetros con 3 valores = [base, optimista, pesimista]
 export const DEFAULTS = {
   sel:2, selcap:2, fae:[2250,2250,2250], faeRef:2250, /* compra neta de dólares de personas humanas (US$ M por mes, por escenario) y su referencia de calibración (make_sets.py) */ gdp:700000, ca26:.006, ca27:[0,.005,-.005], gtr:.003, pistar:.035, E0:1530, pi0:35, anc0:29, anc4:18,
-  dtx:.75, dtm:.25, dG:0, onq1:2700, ondemq1:2600, ondem:[300,180,420], onca:0,
+  dtx:.75, dtm:.25, dG:0, onq1:2700, onca:0, u1:[0,0,0], u2:[0,0,0], u3:[0,0,0],  /* utilidades y dividendos T1, T2, T3 (US$ M por trimestre, por escenario) */
   fxpl:1530, bidpl:2, otrospl:2, restopl:2.8, pfac:[1,1.15,.75], oct27:0,
   m:[1158,1557,1671,2769,2596,1418,2162,768,473],
   saldo:[1850,3700,0], imf:850, imfq:[2,2,4], ooii:4200, ooiip:[1,1,.5], bil:2000, bilp:[.5,1,0], priv:1500, privp:[.5,1,0], sh1:.5,
@@ -29,9 +30,10 @@ export function run(A, s) {
   const sd = CAL.cap.map((c, j) => c + CAL.int[j] + adj[j]), bo = CAL.bop, sdTot = sum(sd.slice(1));
   const m = A.m, seas = [0,1,2].map(k => sum(m.slice(3 * k, 3 * k + 3))), avgm = sum(m) / 9, avgq = sum(m) / 3;
   const pur = [0, ...[...seas, g('oct27') + 2 * avgm].map(v => g('pfac') * v)];
-  const onIn = [0, g('onq1'), 0, 0, 0], onDem = [0, A.ondemq1 / 2, g('ondem'), g('ondem'), g('ondem')].map(v => v * (1 - A.onca));
+  const onIn = [0, g('onq1'), 0, 0, 0], onDem = [0, ...ON_Q].map(v => v * (1 - A.onca)), div = [0, g('u1'), g('u2'), g('u3'), 0];
   const onNet = z().map((_, j) => j ? onIn[j] - onDem[j] : 0);
-  const f = { pur, on: onNet, saldo: [0, g('saldo'), 0, 0, 0], imf: z().map((_, j) => j === g('imfq') ? g('imf') : 0),
+  const ajON = onNet.map((v, j) => v - div[j]);   // flujo neto de ON menos utilidades y dividendos: demanda de divisas que ajusta las compras del BCRA
+  const f = { pur, on: ajON, saldo: [0, g('saldo'), 0, 0, 0], imf: z().map((_, j) => j === g('imfq') ? g('imf') : 0),
     ooii: [0, g('ooii') * g('ooiip') * g('sh1'), g('ooii') * g('ooiip') * (1 - g('sh1')), 0, 0],
     bil: [0, g('bil') * g('bilp') * g('sh1'), g('bil') * g('bilp') * (1 - g('sh1')), 0, 0],
     priv: [0, g('priv') * g('privp') * g('sh1'), g('priv') * g('privp') * (1 - g('sh1')), 0, 0],
@@ -42,8 +44,8 @@ export function run(A, s) {
   let r0 = 0; const dRc = dR.map(v => r0 += v), reservas = dRc.map(v => A.R0 + v);
   const caP = [A.ca26, ...J.map(() => g('ca27'))], caUsd = caP.map(v => v * A.gdp / 4), caRef = A.ca26 * A.gdp / 4;
   const rho = z().map((_, j) => A.rho0 + (g('rho4') - A.rho0) * j / 4), pj = [A.pref, ...J.map(() => g('p'))];
-  const und = j => f.pur[j] + onNet[j] - (j < 4 ? g('pfac') * (seas[j - 1] - avgq) : 0);
-  const sh = [ z().map((_, j) => j ? (-(caUsd[j] - caRef) + (onDem[j] - onIn[j]) + 3 * (g('fae') - A.faeRef)) * 4 / SCALE : 0),
+  const und = j => f.pur[j] + ajON[j] - (j < 4 ? g('pfac') * (seas[j - 1] - avgq) : 0);
+  const sh = [ z().map((_, j) => j ? (-(caUsd[j] - caRef) + (onDem[j] - onIn[j] + div[j]) + 3 * (g('fae') - A.faeRef)) * 4 / SCALE : 0),
     z().map((_, j) => j ? (und(j) - avgq) * 4 / SCALE : 0), pj.map((v, j) => j ? (v - A.pref) * 100 : 0), rho.map((v, j) => j ? (v - A.rho0) / 100 : 0),
     z().map((_, j) => A.dtx * j), z().map((_, j) => A.dtm * j), z().map((_, j) => j ? A.dG : 0), z()];
   const r = {}; OUT.forEach(o => r[o] = z().map((_, j) => sum(KEYS.map((k, i) => S.unit[k][o] * sh[i][j]))));
@@ -57,8 +59,15 @@ export function run(A, s) {
     E[j] = E[j-1] * (q[j] / q[j-1]) * (1 + piN[j] / 400) / (1 + A.pistar * 100 / 400);
     dlnE[j] = 400 * Math.log(E[j] / E[j-1]); piT[j] = dlnE[j] + A.pistar * 100; cpi[j] = A.a * piT[j] + (1 - A.a) * piN[j];
   }
+  // Cuenta financiera cambiaria estimada (+ = ingreso neto de divisas). Los intereses de la deuda pertenecen a la cuenta corriente.
+  const nz = a => a.map((v, j) => j ? v : 0), neg = a => a.map(v => -v);
+  const cf = { ooii: f.ooii, imf: f.imf, bil: f.bil, loc: f.loc, intl: f.intl, cap: neg(nz(CAL.cap.map((c, j) => c + adj[j] - f.intra[j]))), bopreal: neg(nz(bo)),
+    priv: f.priv, onIn: nz(onIn), onPay: neg(onDem), div: neg(div), fae: z().map((_, j) => j ? -3 * g('fae') : 0) };
+  const add = ks => z().map((_, j) => sum(ks.map(k => cf[k][j])));
+  cf.sP = add(['ooii', 'imf', 'bil', 'loc', 'intl', 'cap', 'bopreal']); cf.sV = add(['priv', 'onIn', 'onPay', 'div', 'fae']); cf.cf = cf.sP.map((v, j) => v + cf.sV[j]);
+  cf.cc = nz(caUsd); cf.dR = dR; cf.resid = cf.dR.map((v, j) => v - cf.cc[j] - cf.cf[j]);
   const T = v => sum(v.slice(1)), avg = v => T(v) / 4;
-  return { q: { fae: z().map((_, j) => j ? 3 * g('fae') : 0), pur, src, uses, net, cum, dRc, reservas, act, piN, E, cpi, q, i, emp, gap, rho }, y: {
+  return { cf, q: { div, fae: z().map((_, j) => j ? 3 * g('fae') : 0), pur, src, uses, net, cum, dRc, reservas, act, piN, E, cpi, q, i, emp, gap, rho }, y: {
     ca: g('ca27'), fae: 12 * g('fae'), growth: (1 + A.gtr) * (1 + avg(r.dYtot) / Ytot) - 1, cpi: avg(cpi), cpiT4: cpi[4], E: E[4], q: q[4], i: avg(i), emp: avg(emp), rho: rho[4],
-    pur: T(pur), cum3: cum[3], cum4: cum[4], need: Math.max(0, -cum[4]), dR: dRc[4], reservas: reservas[4], onNet: T(onNet), uses: T(uses) } };
+    pur: T(pur), cum3: cum[3], cum4: cum[4], need: Math.max(0, -cum[4]), dR: dRc[4], reservas: reservas[4], onNet: T(onNet), div: T(div), uses: T(uses) } };
 }
