@@ -59,13 +59,13 @@ export function run(A, s) {
     E[j] = E[j-1] * (q[j] / q[j-1]) * (1 + piN[j] / 400) / (1 + A.pistar * 100 / 400);
     dlnE[j] = 400 * Math.log(E[j] / E[j-1]); piT[j] = dlnE[j] + A.pistar * 100; cpi[j] = A.a * piT[j] + (1 - A.a) * piN[j];
   }
-  // Cuenta financiera cambiaria estimada (+ = ingreso neto de divisas). Los intereses de la deuda pertenecen a la cuenta corriente.
+  // Cuenta financiera cambiaria estimada (+ = ingreso neto de divisas). Intereses y utilidades y dividendos son ingreso primario de la cuenta corriente.
   const nz = a => a.map((v, j) => j ? v : 0), neg = a => a.map(v => -v);
   const cf = { ooii: f.ooii, imf: f.imf, bil: f.bil, loc: f.loc, intl: f.intl, cap: neg(nz(CAL.cap.map((c, j) => c + adj[j] - f.intra[j]))), bopreal: neg(nz(bo)),
-    priv: f.priv, onIn: nz(onIn), onPay: neg(onDem), div: neg(div), fae: z().map((_, j) => j ? -3 * g('fae') : 0) };
+    priv: f.priv, onIn: nz(onIn), onPay: neg(onDem), div: neg(div), intPub: neg(nz(CAL.int)), intON: z().map((_, j) => j ? -ON_Q[j - 1] * A.onca : 0), fae: z().map((_, j) => j ? -3 * g('fae') : 0) };
   const add = ks => z().map((_, j) => sum(ks.map(k => cf[k][j])));
-  cf.sP = add(['ooii', 'imf', 'bil', 'loc', 'intl', 'cap', 'bopreal']); cf.sV = add(['priv', 'onIn', 'onPay', 'div', 'fae']); cf.cf = cf.sP.map((v, j) => v + cf.sV[j]);
-  cf.cc = nz(caUsd); cf.dR = dR; cf.resid = cf.dR.map((v, j) => v - cf.cc[j] - cf.cf[j]);
+  cf.sP = add(['ooii', 'imf', 'bil', 'loc', 'intl', 'cap', 'bopreal']); cf.sV = add(['priv', 'onIn', 'onPay', 'fae']); cf.pi = add(['intPub', 'intON', 'div']); /* pi = cuenta corriente, ingreso primario */ cf.cf = cf.sP.map((v, j) => v + cf.sV[j]);
+  cf.cc = nz(caUsd); cf.dR = dR; cf.resid = cf.dR.map((v, j) => v - cf.cf[j] - cf.pi[j]); cf.bsA = cf.cc.map((v, j) => v - cf.pi[j]); /* resid = saldo de bienes y servicios requerido para cerrar el modelo */
   const T = v => sum(v.slice(1)), avg = v => T(v) / 4;
   return { cf, q: { div, fae: z().map((_, j) => j ? 3 * g('fae') : 0), pur, src, uses, net, cum, dRc, reservas, act, piN, E, cpi, q, i, emp, gap, rho }, y: {
     ca: g('ca27'), fae: 12 * g('fae'), growth: (1 + A.gtr) * (1 + avg(r.dYtot) / Ytot) - 1, cpi: avg(cpi), cpiT4: cpi[4], E: E[4], q: q[4], i: avg(i), emp: avg(emp), rho: rho[4],
