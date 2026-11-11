@@ -95,10 +95,10 @@ row('dG', 'Variación del gasto público (unidades del modelo)', 'unidades', 0.0
 sec('Obligaciones negociables en dólares de empresas argentinas (liquidaciones pendientes y pagos)')
 row('onpend', 'Liquidación pendiente en el MULC de ON ya emitidas (a octubre de 2026)', 'US$ millones', 4400, origin='USUARIO', note='Dato del BCRA verificado por el usuario: emitido 23.700 millones contra 19.200 liquidados. Ingresa en T4-2026 y T1-2027.')
 row('onq1', '  de ello, ingresa en T1-2027', 'US$ millones', 2700, origin='ANALISTA', key_assump=True, note='El usuario no fija el reparto entre T4-2026 y T1-2027. 2.700 en T1 (y 1.700 en T4-2026) reproduce el neto de +500 de 2027; un reparto igual daría 0.')
-row('u1', 'Pagos de utilidades y dividendos, trimestre 1 de 2027', 'US$ millones', 0, 0, 0, 'ANALISTA', fmt=NUM, key_assump=True, note='Demanda de divisas que reduce las compras netas del BCRA (igual que los pagos de ON). Valor inicial cero: debe cargarse. Se computan como cuenta corriente, ingreso primario (utilidades y dividendos), en la hoja Cuenta_financiera.')
+row('u1', 'Pagos de utilidades y dividendos, trimestre 1 de 2027', 'US$ millones', 0, 0, 0, 'ANALISTA', fmt=NUM, key_assump=True, note='Demanda de divisas que reduce las compras netas del BCRA (igual que los pagos de ON). Valor inicial cero: debe cargarse. Se computan como cuenta corriente, ingreso primario (utilidades y dividendos), en la hoja Balance_cambiario.')
 row('u2', 'Pagos de utilidades y dividendos, trimestre 2 de 2027', 'US$ millones', 0, 0, 0, 'ANALISTA', fmt=NUM, key_assump=True)
 row('u3', 'Pagos de utilidades y dividendos, trimestre 3 de 2027', 'US$ millones', 0, 0, 0, 'ANALISTA', fmt=NUM, key_assump=True)
-row('onca', '  fracción de esa demanda ya contenida en la cuenta corriente objetivo', '% de la demanda', 0.0, origin='ANALISTA', fmt=PCT, note='Fracción de los pagos de ON que corresponde a intereses: son ingreso primario de la cuenta corriente (no cuenta financiera) y se muestran así en la hoja Cuenta_financiera; el resto es capital. Por defecto 0%: debe cargarse.')
+row('onca', '  fracción de esa demanda ya contenida en la cuenta corriente objetivo', '% de la demanda', 0.0, origin='ANALISTA', fmt=PCT, note='Fracción de los pagos de ON que corresponde a intereses: son ingreso primario de la cuenta corriente (no cuenta financiera) y se muestran así en la hoja Balance_cambiario; el resto es capital. Por defecto 0%: debe cargarse.')
 sec('Capital de organismos internacionales según el Presupuesto 2027 (Cuadro 16 y texto del informe)')
 row('selcap', 'Fuente del capital de organismos en los usos (1 = planilla MECON; 2 = Presupuesto 2027)', 'número 1 o 2', 2, origin='USUARIO', fmt='0', key_assump=True, note='Con 2 se reemplaza el capital de FMI y de organismos de la planilla MECON por el del Presupuesto 2027 (no se suma, para no contar dos veces); los intereses siguen siendo los de MECON.')
 row('fxpl', 'Tipo de cambio para convertir el Cuadro 16 a dólares', '$ por US$', 1530, origin='ANALISTA', fmt=NUM1, key_assump=True, note='Es el cociente entre los 7,84 billones del FMI y los US$4.407 millones de capital del FMI de la planilla MECON, de modo que el total del FMI no cambia y solo cambia el calendario. El Cuadro 16 no informa el tipo de cambio del Presupuesto; es editable.')
@@ -424,24 +424,25 @@ put(Cm, f'A{4+len(items)+1}', 'Los resultados dependen de los supuestos de la ho
 Cm.column_dimensions['A'].width = 62; Cm.column_dimensions['B'].width = 16
 for c_ in 'CDE': Cm.column_dimensions[c_].width = 15
 
-# =============================== Cuenta_financiera (estimación cambiaria trimestral; + = ingreso neto de divisas)
-CF = wb.create_sheet('Cuenta_financiera')
-put(CF, 'A1', 'Cuenta financiera cambiaria estimada, 2027 (US$ millones)', f_t)
-put(CF, 'A2', 'Positivo = ingreso neto de divisas; negativo = salida neta. Cuenta financiera (sector público y privado) más cuenta corriente: ingreso primario (intereses, utilidades y dividendos). El saldo del programa 2026 (caja inicial) no se incluye. La partida de cierre es el saldo de bienes y servicios que debería cubrir el déficit de dólares (cuenta financiera más ingreso primario) para que el modelo cierre; se compara con el saldo de bienes y servicios implícito en el supuesto de cuenta corriente.', f_norm)
+# =============================== Balance_cambiario (estimación trimestral; + = ingreso neto de divisas)
+CF = wb.create_sheet('Balance_cambiario')
+put(CF, 'A1', 'Balance cambiario estimado, 2027 (US$ millones)', f_t)
+put(CF, 'A2', 'Orden del balance cambiario del BCRA: cuenta corriente (estimada por el usuario, con su ingreso primario), cuenta financiera del sector público y privado, variación de reservas del modelo y saldo para que cierre el modelo. Positivo = ingreso neto de divisas; negativo = salida neta. El saldo de la cuenta corriente de bienes y servicios que cierra el modelo se compara con el implícito en el supuesto de cuenta corriente. El saldo del programa 2026 (caja inicial) no se incluye.', f_norm)
 CK = KR['Capital en moneda extranjera']; rcf = 4
 for name, sc in scen:
     R = SC[name]; section(CF, rcf, f'Escenario {name.lower()}', 8); rcf += 1; header(CF, rcf, ['Concepto', 'Unidad'] + QL + ['2027']); rcf += 1
-    spec = [('h', 'Sector público'), ('ooii', 'Desembolsos de organismos internacionales', lambda c: f"={name}!{c}{R['ooii']}"), ('imf', 'Desembolsos del FMI', lambda c: f"={name}!{c}{R['imf']}"),
+    spec = [('h', 'Cuenta corriente (estimada por el usuario)'), ('cc', 'Cuenta corriente total supuesta en el escenario', lambda c: f"={name}!{c}{R['ca_usd']}"),
+        ('h', 'Ingreso primario'), ('intPub', 'Intereses de deuda pública (MECON)', lambda c: f"=-Calendario_FX!{c}{KR['Intereses en moneda extranjera']}"),
+        ('intON', 'Intereses de obligaciones negociables', lambda c: f"=-Pagos_ON!$G${6+'DEFG'.index(c)}*{sp('onca', sc)}"), ('div', 'Utilidades y dividendos', lambda c: f"=-{name}!{c}{R['div']}"),
+        ('pi', 'Subtotal ingreso primario', None), ('bsA', 'Memo: saldo de bienes y servicios implícito en el supuesto (cuenta corriente menos ingreso primario)', None),
+        ('h', 'Cuenta financiera: sector público'), ('ooii', 'Desembolsos de organismos internacionales', lambda c: f"={name}!{c}{R['ooii']}"), ('imf', 'Desembolsos del FMI', lambda c: f"={name}!{c}{R['imf']}"),
         ('bil', 'Préstamo bilateral', lambda c: f"={name}!{c}{R['bil']}"), ('loc', 'Emisión de deuda local en dólares', lambda c: f"={name}!{c}{R['loc']}"), ('intl', 'Emisión internacional de deuda', lambda c: f"={name}!{c}{R['intl']}"),
         ('cap', 'Amortizaciones de capital, netas de roll over intra sector público', lambda c: f"=-(Calendario_FX!{c}{CK}+Calendario_FX!{c}{KR['adj']}-{name}!{c}{R['intra']})"), ('bopreal', 'BOPREAL Serie 1 (capital)', lambda c: f"=-{name}!{c}{R['bo']}"),
-        ('sP', 'Subtotal sector público', None), ('h', 'Sector privado'), ('priv', 'Privatizaciones (inversión directa)', lambda c: f"={name}!{c}{R['priv']}"), ('onIn', 'Liquidación de ON ya emitidas', lambda c: f"={name}!{c}{R['on_in']}"),
+        ('sP', 'Subtotal sector público', None), ('h', 'Cuenta financiera: sector privado'), ('priv', 'Privatizaciones (inversión directa)', lambda c: f"={name}!{c}{R['priv']}"), ('onIn', 'Liquidación de ON ya emitidas', lambda c: f"={name}!{c}{R['on_in']}"),
         ('onPay', 'Pagos de capital de ON', lambda c: f"=-{name}!{c}{R['on_dem']}"), ('fae', 'Formación de activos externos de personas humanas', lambda c: f"=-{name}!{c}{R['fae']}"),
-        ('sV', 'Subtotal sector privado', None), ('cf', 'Cuenta financiera cambiaria estimada', None),
-        ('h', 'Cuenta corriente: ingreso primario'), ('intPub', 'Intereses de deuda pública (MECON)', lambda c: f"=-Calendario_FX!{c}{KR['Intereses en moneda extranjera']}"),
-        ('intON', 'Intereses de obligaciones negociables', lambda c: f"=-Pagos_ON!$G${6+'DEFG'.index(c)}*{sp('onca', sc)}"), ('div', 'Utilidades y dividendos', lambda c: f"=-{name}!{c}{R['div']}"),
-        ('pi', 'Subtotal ingreso primario', None), ('h', 'Cierre con el resto del modelo'), ('dR', 'Variación de reservas del modelo', lambda c: f"={name}!{c}{R['dR']}"),
-        ('resid', 'Partida de cierre: saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', None),
-        ('cc', 'Memo: cuenta corriente total supuesta en el escenario', lambda c: f"={name}!{c}{R['ca_usd']}"), ('bsA', 'Memo: saldo de bienes y servicios implícito en el supuesto (cuenta corriente menos ingreso primario)', None)]
+        ('sV', 'Subtotal sector privado', None), ('cf', 'Total cuenta financiera', None),
+        ('h', 'Variación de reservas'), ('dR', 'Variación de reservas del modelo', lambda c: f"={name}!{c}{R['dR']}"),
+        ('h', 'Saldo para que cierre el modelo'), ('resid', 'Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', None)]
     P_ = {}
     for it in spec:
         if it[0] == 'h': put(CF, f'A{rcf}', it[1], f_bold); rcf += 1; continue
@@ -498,7 +499,7 @@ if SENS:
     Z.column_dimensions['A'].width = 58; Z.column_dimensions['B'].width = 16
     for c_ in 'CDEFGH': Z.column_dimensions[c_].width = 17
 # orden de hojas
-order_names = ['Leyenda', 'Supuestos', 'Comparativo'] + (['Sensibilidad'] if SENS else []) + ['Cuenta_financiera', 'Calendario_FX', 'Pagos_ON', 'Presupuesto_2027', 'Base', 'Optimista', 'Pesimista', 'Coeficientes', 'Verificacion']
+order_names = ['Leyenda', 'Supuestos', 'Comparativo'] + (['Sensibilidad'] if SENS else []) + ['Balance_cambiario', 'Calendario_FX', 'Pagos_ON', 'Presupuesto_2027', 'Base', 'Optimista', 'Pesimista', 'Coeficientes', 'Verificacion']
 wb._sheets = [wb[n] for n in order_names]
 wb.save(OUT)
 print('guardado; filas Base:', {k: v for k, v in SC['Base'].items() if k in ('pur', 'cum', 'dRc', 'r_YN', 'piN', 'E', 'cpi')})

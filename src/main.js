@@ -81,14 +81,16 @@ function render() {
   const r = R[cur];
   $('det').innerHTML = `<table><thead><tr><th>Concepto</th>${QL.map(q => `<th>${q}</th>`).join('')}</tr></thead><tbody>${QROWS.map(([l, k, f]) => k ? `<tr><td>${l}</td>${r.q[k].map((v, j) => (!j && FLOW.includes(k)) ? '<td>–</td>' : cell(v, f)).join('')}</tr>` : gp(l, 6)).join('')}</tbody></table>`;
 }
-// Cuenta financiera cambiaria estimada (solapa propia)
-const CFROWS = [['Cuenta financiera: sector público'], ['Desembolsos de organismos internacionales', 'ooii'], ['Desembolsos del FMI', 'imf'], ['Préstamo bilateral', 'bil'], ['Emisión de deuda local en dólares', 'loc'], ['Emisión internacional de deuda', 'intl'],
+// Balance cambiario estimado (solapa propia)
+const CFROWS = [['Cuenta corriente (estimada por el usuario)'], ['Cuenta corriente total supuesta en el escenario', 'cc', 1],
+  ['Ingreso primario'], ['Intereses de deuda pública (MECON)', 'intPub'], ['Intereses de obligaciones negociables', 'intON'], ['Utilidades y dividendos', 'div'], ['Subtotal ingreso primario', 'pi', 1],
+  ['Memo: saldo de bienes y servicios implícito en el supuesto (cuenta corriente menos ingreso primario)', 'bsA'],
+  ['Cuenta financiera: sector público'], ['Desembolsos de organismos internacionales', 'ooii'], ['Desembolsos del FMI', 'imf'], ['Préstamo bilateral', 'bil'], ['Emisión de deuda local en dólares', 'loc'], ['Emisión internacional de deuda', 'intl'],
   ['Amortizaciones de capital, netas de roll over intra sector público', 'cap'], ['BOPREAL Serie 1 (capital)', 'bopreal'], ['Subtotal sector público', 'sP', 1],
   ['Cuenta financiera: sector privado'], ['Privatizaciones (inversión directa)', 'priv'], ['Liquidación de ON ya emitidas', 'onIn'], ['Pagos de capital de ON', 'onPay'], ['Formación de activos externos de personas humanas', 'fae'], ['Subtotal sector privado', 'sV', 1],
-  ['Cuenta financiera cambiaria estimada', 'cf', 1],
-  ['Cuenta corriente: ingreso primario'], ['Intereses de deuda pública (MECON)', 'intPub'], ['Intereses de obligaciones negociables', 'intON'], ['Utilidades y dividendos', 'div'], ['Subtotal ingreso primario', 'pi', 1],
-  ['Cierre con el resto del modelo'], ['Variación de reservas del modelo', 'dR'], ['Partida de cierre: saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', 'resid', 1],
-  ['Memo: cuenta corriente total supuesta en el escenario', 'cc'], ['Memo: saldo de bienes y servicios implícito en el supuesto (cuenta corriente menos ingreso primario)', 'bsA']];
+  ['Total cuenta financiera', 'cf', 1],
+  ['Variación de reservas'], ['Variación de reservas del modelo', 'dR', 1],
+  ['Saldo para que cierre el modelo'], ['Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', 'resid', 1]];
 const CFQ = ['T1-2027', 'T2-2027', 'T3-2027', 'T4-2027', 'Total 2027'], tot4 = a => a.slice(1).reduce((x, y) => x + y, 0);
 function renderCF(R = SCEN.map((_, i) => run(A, i))) {
   const row = (l, k, b, v) => `<tr class="${b ? 'tt' : ''}"><td>${l}</td>${v.map(x => cell(x, nf())).join('')}</tr>`;
@@ -96,9 +98,9 @@ function renderCF(R = SCEN.map((_, i) => run(A, i))) {
   const c = R[curCf].cf;
   $('cfdet').innerHTML = `<table><thead><tr><th>${SCEN[curCf]} (US$ millones)</th>${CFQ.map(q => `<th>${q}</th>`).join('')}</tr></thead><tbody>${CFROWS.map(([l, k, b]) => k ? row(l, k, b, [...c[k].slice(1), tot4(c[k])]) : gp(l, 6)).join('')}</tbody></table>`;
 }
-// Solapas: Simulador / Cuenta financiera / Metodología
+// Solapas: Simulador / Balance cambiario / Metodología
 $('met').innerHTML = METODOLOGIA;
-function view(v) { $('sim').hidden = v !== 'sim'; $('cf').hidden = v !== 'cf'; $('met').hidden = v !== 'met'; $('nav').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); history.replaceState(null, '', v === 'met' ? '#metodologia' : v === 'cf' ? '#cuenta-financiera' : location.pathname); scrollTo(0, 0); }
+function view(v) { $('sim').hidden = v !== 'sim'; $('cf').hidden = v !== 'cf'; $('met').hidden = v !== 'met'; $('nav').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); history.replaceState(null, '', v === 'met' ? '#metodologia' : v === 'cf' ? '#balance-cambiario' : location.pathname); scrollTo(0, 0); }
 $('nav').addEventListener('click', e => { const b = e.target.closest('button'); if (b) view(b.dataset.v); });
-if (location.hash === '#metodologia') view('met'); else if (location.hash === '#cuenta-financiera') view('cf');
+if (location.hash === '#metodologia') view('met'); else if (location.hash === '#balance-cambiario' || location.hash === '#cuenta-financiera') view('cf');
 build(); render();

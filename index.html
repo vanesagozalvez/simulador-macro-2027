@@ -5,7 +5,7 @@
 </head><body>
 <header class="top"><div><p class="eyebrow">Modelo IS-LM-BP de dos sectores · trimestral</p><h1>Escenarios macro de Argentina, 2027</h1></div>
 <p class="note">Parámetros ilustrativos, no estimados. Los resultados dependen de los supuestos y no son pronósticos.</p></header>
-<nav id="nav" aria-label="Secciones"><button type="button" data-v="sim" aria-pressed="true">Simulador</button><button type="button" data-v="cf" aria-pressed="false">Cuenta financiera</button><button type="button" data-v="met" aria-pressed="false">Metodología</button></nav>
+<nav id="nav" aria-label="Secciones"><button type="button" data-v="sim" aria-pressed="true">Simulador</button><button type="button" data-v="cf" aria-pressed="false">Balance cambiario</button><button type="button" data-v="met" aria-pressed="false">Metodología</button></nav>
 <div class="app" id="sim">
 <aside id="panel" aria-label="Supuestos"><div class="ph"><h2>Supuestos</h2><button id="reset" type="button">Restablecer</button></div><div id="ctl"></div></aside>
 <main><div id="kpi"></div>
@@ -13,8 +13,8 @@
 <section><h2>Comparación de escenarios</h2><div class="wrap" id="cmp"></div></section>
 <section><div class="bar"><h2>Detalle trimestral</h2><div id="tabs" role="group" aria-label="Escenario"></div></div><div class="wrap" id="det"></div></section>
 <footer>Motor: port a JavaScript de <code>python/build_xlsx.py</code>. Los cambios se recalculan al instante en el navegador.</footer></main></div>
-<div id="cf" class="page" hidden><h2>Cuenta financiera cambiaria estimada, 2027</h2>
-<p class="lead">Estimación trimestral de la cuenta financiera cambiaria y del ingreso primario de la cuenta corriente (intereses, utilidades y dividendos) de cada escenario, calculada con los supuestos de la solapa Simulador. Positivo = ingreso neto de divisas; negativo = salida neta. La partida de cierre es el saldo de bienes y servicios que haría falta para que el modelo cierre. Ver detalle en Metodología.</p>
+<div id="cf" class="page" hidden><h2>Balance cambiario estimado, 2027</h2>
+<p class="lead">Estimación trimestral del balance cambiario de cada escenario, con el orden del balance cambiario del BCRA: cuenta corriente (estimada por el usuario, con su ingreso primario), cuenta financiera del sector público y privado, variación de reservas del modelo y saldo para que cierre el modelo. Positivo = ingreso neto de divisas; negativo = salida neta. Calculada con los supuestos de la solapa Simulador. Ver detalle en Metodología.</p>
 <section><div class="wrap" id="cfsum"></div></section>
 <section><div class="bar"><h2>Detalle trimestral</h2><div id="cftabs" role="group" aria-label="Escenario"></div></div><div class="wrap" id="cfdet"></div></section></div>
 <div id="met" hidden></div>
