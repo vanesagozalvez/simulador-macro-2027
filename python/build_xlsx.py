@@ -345,8 +345,8 @@ for name, sc in scen:
     seas = {'D': f"(Supuestos!$C${SR['m1']}+Supuestos!$C${SR['m2']}+Supuestos!$C${SR['m3']})", 'E': f"(Supuestos!$C${SR['m4']}+Supuestos!$C${SR['m5']}+Supuestos!$C${SR['m6']})", 'F': f"(Supuestos!$C${SR['m7']}+Supuestos!$C${SR['m8']}+Supuestos!$C${SR['m9']})"}
     avgq = f"(SUM(Supuestos!$C${SR['m1']}:Supuestos!$C${SR['m9']})/3)"
     line('pi', 'Ingreso primario 2027 (intereses de deuda pública y de ON, utilidades y dividendos)', 'US$ millones', [0] + [f"=-(Calendario_FX!{c}{KR['Intereses en moneda extranjera']}+Pagos_ON!$G${6+i}*{sp('onca', sc)}+{c}{R['div']})" for i, c in enumerate('DEFG')], total='=SUM(D#:G#)')
-    line('ccn', 'Cuenta corriente neta del ingreso primario (flujo trimestral)', 'US$ millones', [0] + [f"={c}{R['ca_usd']}+{c}{R['pi']}" for c in 'DEFG'], total='=SUM(D#:G#)')
-    line('s_psi', 'Exceso de demanda de divisas (cuenta corriente neta menor que la referencia, demanda de ON y compra neta de personas humanas sobre la referencia)', 'unid. anual', [0] + [f"=(-({c}{R['ccn']}-{c}{R['ca_ref']})+({c}{R['on_dem']}-{c}{R['on_in']})+({c}{R['fae']}-3*{sp('faeref', sc)}))*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
+    line('ccn', 'Total cuenta corriente, incluye el ingreso primario (flujo trimestral)', 'US$ millones', [0] + [f"={c}{R['ca_usd']}+{c}{R['pi']}" for c in 'DEFG'], total='=SUM(D#:G#)')
+    line('s_psi', 'Exceso de demanda de divisas (total de la cuenta corriente menor que la referencia, demanda de ON y compra neta de personas humanas sobre la referencia)', 'unid. anual', [0] + [f"=(-({c}{R['ccn']}-{c}{R['ca_ref']})+({c}{R['on_dem']}-{c}{R['on_in']})+({c}{R['fae']}-3*{sp('faeref', sc)}))*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
     # compras subyacentes: se descuenta el patrón estacional de 2026 (T4 sin patrón)
     pur_und = {'D': f"(D{R['pur']}+D{R['on_adj']}-{sp('pfac', sc)}*({seas['D']}-{avgq}))", 'E': f"(E{R['pur']}+E{R['on_adj']}-{sp('pfac', sc)}*({seas['E']}-{avgq}))", 'F': f"(F{R['pur']}+F{R['on_adj']}-{sp('pfac', sc)}*({seas['F']}-{avgq}))", 'G': f"(G{R['pur']}+G{R['on_adj']})"}
     line('s_pur', 'Compras subyacentes del BCRA respecto de la referencia', 'unid. anual', [0] + [f"=({pur_und[c]}-{avgq})*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
@@ -441,7 +441,7 @@ for name, sc in scen:
     spec = [('h', 'Cuenta corriente (estimada por el usuario)'), ('cc', 'Cuenta corriente estimada por el usuario (antes del ingreso primario)', lambda c: f"={name}!{c}{R['ca_usd']}"),
         ('h', 'Ingreso primario'), ('intPub', 'Intereses de deuda pública (MECON)', lambda c: f"=-Calendario_FX!{c}{KR['Intereses en moneda extranjera']}"),
         ('intON', 'Intereses de obligaciones negociables', lambda c: f"=-Pagos_ON!$G${6+'DEFG'.index(c)}*{sp('onca', sc)}"), ('div', 'Utilidades y dividendos', lambda c: f"=-{name}!{c}{R['div']}"),
-        ('pi', 'Subtotal ingreso primario', None), ('ccn', 'Cuenta corriente neta del ingreso primario (cuenta corriente estimada más subtotal ingreso primario)', None),
+        ('pi', 'Subtotal ingreso primario', None), ('ccn', 'Total Cuenta corriente (incluye el ingreso primario)', None),
         ('h', 'Cuenta financiera: sector público'), ('ooii', 'Desembolsos de organismos internacionales', lambda c: f"={name}!{c}{R['ooii']}"), ('imf', 'Desembolsos del FMI', lambda c: f"={name}!{c}{R['imf']}"),
         ('bil', 'Préstamo bilateral', lambda c: f"={name}!{c}{R['bil']}"), ('loc', 'Emisión de deuda local en dólares', lambda c: f"={name}!{c}{R['loc']}"), ('intl', 'Emisión internacional de deuda', lambda c: f"={name}!{c}{R['intl']}"),
         ('cap', 'Amortizaciones de capital, netas de roll over intra sector público', lambda c: f"=-(Calendario_FX!{c}{CK}+Calendario_FX!{c}{KR['adj']}-{name}!{c}{R['intra']})"), ('bopreal', 'BOPREAL Serie 1 (capital)', lambda c: f"=-{name}!{c}{R['bo']}"),
@@ -449,7 +449,8 @@ for name, sc in scen:
         ('onPay', 'Pagos de capital de ON', lambda c: f"=-{name}!{c}{R['on_dem']}"), ('fae', 'Formación de activos externos de personas humanas', lambda c: f"=-{name}!{c}{R['fae']}"),
         ('sV', 'Subtotal sector privado', None), ('cf', 'Total cuenta financiera', None),
         ('h', 'Variación de reservas'), ('dR', 'Variación de reservas del modelo', lambda c: f"={name}!{c}{R['dR']}"),
-        ('h', 'Saldo para que cierre el modelo'), ('resid', 'Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', None)]
+        ('h', 'Saldo para que cierre el modelo'), ('resid', 'Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', None),
+        ('fs', 'Faltante (-) / sobrante (+) de dólares (Total cuenta corriente más total cuenta financiera)', None)]
     P_ = {}
     for it in spec:
         if it[0] == 'h': put(CF, f'A{rcf}', it[1], f_bold); rcf += 1; continue
@@ -460,9 +461,10 @@ for name, sc in scen:
             elif k == 'sV': fm = f"=SUM({c}{P_['priv']}:{c}{P_['fae']})"
             elif k == 'cf': fm = f"={c}{P_['sP']}+{c}{P_['sV']}"
             elif k == 'pi': fm = f"=SUM({c}{P_['intPub']}:{c}{P_['div']})"
+            elif k == 'fs': fm = f"={c}{P_['ccn']}+{c}{P_['cf']}"
             elif k == 'ccn': fm = f"={c}{P_['cc']}+{c}{P_['pi']}"
             else: fm = f"={c}{P_['dR']}-{c}{P_['cf']}-{c}{P_['pi']}"
-            put(CF, f'{c}{rcf}', fm, f_link if fn else f_bold if k in ('sP', 'sV', 'cf', 'pi', 'resid') else f_norm, NUM)
+            put(CF, f'{c}{rcf}', fm, f_link if fn else f_bold if k in ('sP', 'sV', 'cf', 'pi', 'resid', 'fs') else f_norm, NUM)
         put(CF, f'H{rcf}', f'=SUM(D{rcf}:G{rcf})', f_bold if fn is None else f_norm, NUM); rcf += 1
     rcf += 1
 CF.column_dimensions['A'].width = 70; CF.column_dimensions['B'].width = 14

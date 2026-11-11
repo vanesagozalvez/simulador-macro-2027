@@ -66,7 +66,7 @@ export function run(A, s) {
     priv: f.priv, onIn: nz(onIn), onPay: neg(onDem), div: neg(div), intPub: neg(nz(CAL.int)), intON: z().map((_, j) => j ? -ON_Q[j - 1] * A.onca : 0), fae: z().map((_, j) => j ? -3 * g('fae') : 0) };
   const add = ks => z().map((_, j) => sum(ks.map(k => cf[k][j])));
   cf.sP = add(['ooii', 'imf', 'bil', 'loc', 'intl', 'cap', 'bopreal']); cf.sV = add(['priv', 'onIn', 'onPay', 'fae']); cf.pi = add(['intPub', 'intON', 'div']); /* pi = cuenta corriente, ingreso primario */ cf.cf = cf.sP.map((v, j) => v + cf.sV[j]);
-  cf.cc = nz(caUsd); cf.dR = dR; cf.resid = cf.dR.map((v, j) => v - cf.cf[j] - cf.pi[j]); cf.ccn = cf.cc.map((v, j) => v + cf.pi[j]); /* resid = saldo de bienes y servicios requerido para cerrar el modelo; ccn = cuenta corriente estimada más ingreso primario */
+  cf.cc = nz(caUsd); cf.dR = dR; cf.resid = cf.dR.map((v, j) => v - cf.cf[j] - cf.pi[j]); cf.ccn = cf.cc.map((v, j) => v + cf.pi[j]); cf.fs = cf.ccn.map((v, j) => v + cf.cf[j]); /* fs = faltante (-) / sobrante (+) de dólares */ /* resid = saldo de bienes y servicios requerido para cerrar el modelo; ccn = cuenta corriente estimada más ingreso primario */
   const T = v => sum(v.slice(1)), avg = v => T(v) / 4;
   return { cf, q: { div, fae: z().map((_, j) => j ? 3 * g('fae') : 0), pur, src, uses, net, cum, dRc, reservas, act, piN, E, cpi, q, i, emp, gap, rho }, y: {
     ca: g('ca27'), fae: 12 * g('fae'), growth: (1 + A.gtr) * (1 + avg(r.dYtot) / Ytot) - 1, cpi: avg(cpi), cpiT4: cpi[4], E: E[4], q: q[4], i: avg(i), emp: avg(emp), rho: rho[4],

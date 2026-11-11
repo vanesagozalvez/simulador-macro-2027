@@ -84,13 +84,14 @@ function render() {
 // Balance cambiario estimado (solapa propia)
 const CFROWS = [['Cuenta corriente (estimada por el usuario)'], ['Cuenta corriente estimada por el usuario (antes del ingreso primario)', 'cc', 1],
   ['Ingreso primario'], ['Intereses de deuda pública (MECON)', 'intPub'], ['Intereses de obligaciones negociables', 'intON'], ['Utilidades y dividendos', 'div'], ['Subtotal ingreso primario', 'pi', 1],
-  ['Cuenta corriente neta del ingreso primario (cuenta corriente estimada más subtotal ingreso primario)', 'ccn', 1],
+  ['Total Cuenta corriente (incluye el ingreso primario)', 'ccn', 1],
   ['Cuenta financiera: sector público'], ['Desembolsos de organismos internacionales', 'ooii'], ['Desembolsos del FMI', 'imf'], ['Préstamo bilateral', 'bil'], ['Emisión de deuda local en dólares', 'loc'], ['Emisión internacional de deuda', 'intl'],
   ['Amortizaciones de capital, netas de roll over intra sector público', 'cap'], ['BOPREAL Serie 1 (capital)', 'bopreal'], ['Subtotal sector público', 'sP', 1],
   ['Cuenta financiera: sector privado'], ['Privatizaciones (inversión directa)', 'priv'], ['Liquidación de ON ya emitidas', 'onIn'], ['Pagos de capital de ON', 'onPay'], ['Formación de activos externos de personas humanas', 'fae'], ['Subtotal sector privado', 'sV', 1],
   ['Total cuenta financiera', 'cf', 1],
   ['Variación de reservas'], ['Variación de reservas del modelo', 'dR', 1],
-  ['Saldo para que cierre el modelo'], ['Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', 'resid', 1]];
+  ['Saldo para que cierre el modelo'], ['Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', 'resid', 1],
+  ['Faltante (-) / sobrante (+) de dólares (Total cuenta corriente más total cuenta financiera)', 'fs', 1]];
 const CFQ = ['T1-2027', 'T2-2027', 'T3-2027', 'T4-2027', 'Total 2027'], tot4 = a => a.slice(1).reduce((x, y) => x + y, 0);
 function renderRef() {
   const f = nf(2), pp = v => nf(2)(v / A.gdp * 100) + '%', k = 12 / A.mes26, antes = A.cc26 - A.int26 - A.div26;
