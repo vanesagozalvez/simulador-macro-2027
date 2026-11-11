@@ -71,10 +71,15 @@ def row(key, label, unit_, base, opt=None, pes=None, origin='USUARIO', note='', 
             put(S, f'{col}{r}', v, f_in, fmt, fill=fill_y if key_assump else None)
     put(S, f'F{r}', origin); put(S, f'G{r}', note, wrap=True); r += 1
 sec('Magnitudes generales')
-row('gdp', 'PBI 2026 en dólares', 'US$ millones', 700000, origin='USUARIO', note='Dato del usuario; se usa como escala fija del modelo para 2026 y 2027.')
+row('gdp', 'PBI 2026 en dólares', 'US$ millones', 768210, origin='USUARIO', note='Proyección del FMI para 2026, dato del usuario; se usa como escala fija del modelo para 2026 y 2027. Los coeficientes se recalibraron con este valor (make_sets.py).')
 row('g26', 'Crecimiento 2026', '% anual', 0.015, origin='USUARIO', fmt=PCT)
 row('inf26', 'Inflación 2026', '% anual', 0.31, origin='USUARIO', fmt=PCT)
-row('ca26', 'Cuenta corriente 2026', '% del PBI', 0.006, origin='USUARIO', fmt=PCT2, note='Superávit; es la referencia respecto de la cual se miden los shocks de 2027.')
+row('cc26', 'Cuenta corriente acumulada ene-sep 2026 (balance cambiario, incluye el ingreso primario)', 'US$ millones', 12640.30, origin='USUARIO', fmt=NUM, note='Dato del usuario, verificado por él (1,65% del PBI). Ya incluye los pagos de intereses y de utilidades y dividendos de las dos filas siguientes.')
+row('int26', 'Intereses pagados acumulados ene-sep 2026 (egreso)', 'US$ millones', -3153.80, origin='USUARIO', fmt=NUM, note='Dato del usuario, verificado por él (-0,41% del PBI). Ya incluido en la cuenta corriente.')
+row('div26', 'Utilidades y dividendos acumulados ene-sep 2026 (egreso)', 'US$ millones', -3931.09, origin='USUARIO', fmt=NUM, note='Dato del usuario, verificado por él (-0,51% del PBI). Ya incluido en la cuenta corriente.')
+row('mes26', 'Meses que cubre el acumulado de 2026', 'meses', 9, origin='ANALISTA', fmt=NUM, note='Se usa para anualizar (por 12 sobre este valor). Con 12 no se anualiza.')
+row('ca26', 'Cuenta corriente 2026 (incluye el ingreso primario), anualizada', '% del PBI', f"=C{SR['cc26']}*12/C{SR['mes26']}/C{SR['gdp']}", origin='ANALISTA', fmt=PCT2, note='Cuenta corriente total del balance cambiario (ya incluye intereses y utilidades y dividendos), anualizada. Es la referencia respecto de la cual se miden los shocks de 2027: se compara con la cuenta corriente neta del ingreso primario de 2027.')
+row('ca26b', 'Memo: cuenta corriente 2026 antes del ingreso primario, anualizada', '% del PBI', f"=(C{SR['cc26']}-C{SR['int26']}-C{SR['div26']})*12/C{SR['mes26']}/C{SR['gdp']}", origin='ANALISTA', fmt=PCT2, note='Cuenta corriente menos intereses y utilidades y dividendos (que son egresos): es comparable con el supuesto de cuenta corriente 2027, que se carga antes del ingreso primario. No se usa en los cálculos.')
 row('xs', 'Exportaciones', '% del PBI', 0.18, origin='USUARIO', fmt=PCT)
 row('ms', 'Importaciones', '% del PBI', 0.145, origin='USUARIO', fmt=PCT, note='Con exportaciones de 18% e importaciones de 14,5%, el peso del sector transable es 32,5% del PBI total (calibración vigente de los coeficientes).')
 row('gtr', 'Crecimiento tendencial 2027', '% anual', 0.003, origin='ANALISTA', fmt=PCT, key_assump=True, note='Supuesto de continuidad con 2026; no dado por el usuario.')
@@ -339,7 +344,9 @@ for name, sc in scen:
     line('rho', 'Riesgo país', 'pb', [f"={sp('rho0', sc)}"] + [f"={sp('rho0', sc)}+({sp('rho4', sc)}-{sp('rho0', sc)})*{k}/4" for k in (1, 2, 3, 4)], fmt=NUM)
     seas = {'D': f"(Supuestos!$C${SR['m1']}+Supuestos!$C${SR['m2']}+Supuestos!$C${SR['m3']})", 'E': f"(Supuestos!$C${SR['m4']}+Supuestos!$C${SR['m5']}+Supuestos!$C${SR['m6']})", 'F': f"(Supuestos!$C${SR['m7']}+Supuestos!$C${SR['m8']}+Supuestos!$C${SR['m9']})"}
     avgq = f"(SUM(Supuestos!$C${SR['m1']}:Supuestos!$C${SR['m9']})/3)"
-    line('s_psi', 'Exceso de demanda de divisas (CA menor que la referencia, demanda de ON y compra neta de personas humanas sobre la referencia)', 'unid. anual', [0] + [f"=(-({c}{R['ca_usd']}-{c}{R['ca_ref']})+({c}{R['on_dem']}-{c}{R['on_in']}+{c}{R['div']})+({c}{R['fae']}-3*{sp('faeref', sc)}))*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
+    line('pi', 'Ingreso primario 2027 (intereses de deuda pública y de ON, utilidades y dividendos)', 'US$ millones', [0] + [f"=-(Calendario_FX!{c}{KR['Intereses en moneda extranjera']}+Pagos_ON!$G${6+i}*{sp('onca', sc)}+{c}{R['div']})" for i, c in enumerate('DEFG')], total='=SUM(D#:G#)')
+    line('ccn', 'Cuenta corriente neta del ingreso primario (flujo trimestral)', 'US$ millones', [0] + [f"={c}{R['ca_usd']}+{c}{R['pi']}" for c in 'DEFG'], total='=SUM(D#:G#)')
+    line('s_psi', 'Exceso de demanda de divisas (cuenta corriente neta menor que la referencia, demanda de ON y compra neta de personas humanas sobre la referencia)', 'unid. anual', [0] + [f"=(-({c}{R['ccn']}-{c}{R['ca_ref']})+({c}{R['on_dem']}-{c}{R['on_in']})+({c}{R['fae']}-3*{sp('faeref', sc)}))*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
     # compras subyacentes: se descuenta el patrón estacional de 2026 (T4 sin patrón)
     pur_und = {'D': f"(D{R['pur']}+D{R['on_adj']}-{sp('pfac', sc)}*({seas['D']}-{avgq}))", 'E': f"(E{R['pur']}+E{R['on_adj']}-{sp('pfac', sc)}*({seas['E']}-{avgq}))", 'F': f"(F{R['pur']}+F{R['on_adj']}-{sp('pfac', sc)}*({seas['F']}-{avgq}))", 'G': f"(G{R['pur']}+G{R['on_adj']})"}
     line('s_pur', 'Compras subyacentes del BCRA respecto de la referencia', 'unid. anual', [0] + [f"=({pur_und[c]}-{avgq})*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
@@ -427,14 +434,14 @@ for c_ in 'CDE': Cm.column_dimensions[c_].width = 15
 # =============================== Balance_cambiario (estimación trimestral; + = ingreso neto de divisas)
 CF = wb.create_sheet('Balance_cambiario')
 put(CF, 'A1', 'Balance cambiario estimado, 2027 (US$ millones)', f_t)
-put(CF, 'A2', 'Orden del balance cambiario del BCRA: cuenta corriente (estimada por el usuario, con su ingreso primario), cuenta financiera del sector público y privado, variación de reservas del modelo y saldo para que cierre el modelo. Positivo = ingreso neto de divisas; negativo = salida neta. El saldo de la cuenta corriente de bienes y servicios que cierra el modelo se compara con el implícito en el supuesto de cuenta corriente. El saldo del programa 2026 (caja inicial) no se incluye.', f_norm)
+put(CF, 'A2', 'Orden del balance cambiario del BCRA: cuenta corriente (estimada por el usuario, con su ingreso primario), cuenta financiera del sector público y privado, variación de reservas del modelo y saldo para que cierre el modelo. Positivo = ingreso neto de divisas; negativo = salida neta. El saldo de la cuenta corriente de bienes y servicios que cierra el modelo se compara con la cuenta corriente estimada por el usuario. El saldo del programa 2026 (caja inicial) no se incluye.', f_norm)
 CK = KR['Capital en moneda extranjera']; rcf = 4
 for name, sc in scen:
     R = SC[name]; section(CF, rcf, f'Escenario {name.lower()}', 8); rcf += 1; header(CF, rcf, ['Concepto', 'Unidad'] + QL + ['2027']); rcf += 1
-    spec = [('h', 'Cuenta corriente (estimada por el usuario)'), ('cc', 'Cuenta corriente total supuesta en el escenario', lambda c: f"={name}!{c}{R['ca_usd']}"),
+    spec = [('h', 'Cuenta corriente (estimada por el usuario)'), ('cc', 'Cuenta corriente estimada por el usuario (antes del ingreso primario)', lambda c: f"={name}!{c}{R['ca_usd']}"),
         ('h', 'Ingreso primario'), ('intPub', 'Intereses de deuda pública (MECON)', lambda c: f"=-Calendario_FX!{c}{KR['Intereses en moneda extranjera']}"),
         ('intON', 'Intereses de obligaciones negociables', lambda c: f"=-Pagos_ON!$G${6+'DEFG'.index(c)}*{sp('onca', sc)}"), ('div', 'Utilidades y dividendos', lambda c: f"=-{name}!{c}{R['div']}"),
-        ('pi', 'Subtotal ingreso primario', None), ('bsA', 'Memo: saldo de bienes y servicios implícito en el supuesto (cuenta corriente menos ingreso primario)', None),
+        ('pi', 'Subtotal ingreso primario', None), ('ccn', 'Cuenta corriente neta del ingreso primario (cuenta corriente estimada más subtotal ingreso primario)', None),
         ('h', 'Cuenta financiera: sector público'), ('ooii', 'Desembolsos de organismos internacionales', lambda c: f"={name}!{c}{R['ooii']}"), ('imf', 'Desembolsos del FMI', lambda c: f"={name}!{c}{R['imf']}"),
         ('bil', 'Préstamo bilateral', lambda c: f"={name}!{c}{R['bil']}"), ('loc', 'Emisión de deuda local en dólares', lambda c: f"={name}!{c}{R['loc']}"), ('intl', 'Emisión internacional de deuda', lambda c: f"={name}!{c}{R['intl']}"),
         ('cap', 'Amortizaciones de capital, netas de roll over intra sector público', lambda c: f"=-(Calendario_FX!{c}{CK}+Calendario_FX!{c}{KR['adj']}-{name}!{c}{R['intra']})"), ('bopreal', 'BOPREAL Serie 1 (capital)', lambda c: f"=-{name}!{c}{R['bo']}"),
@@ -453,7 +460,7 @@ for name, sc in scen:
             elif k == 'sV': fm = f"=SUM({c}{P_['priv']}:{c}{P_['fae']})"
             elif k == 'cf': fm = f"={c}{P_['sP']}+{c}{P_['sV']}"
             elif k == 'pi': fm = f"=SUM({c}{P_['intPub']}:{c}{P_['div']})"
-            elif k == 'bsA': fm = f"={c}{P_['cc']}-{c}{P_['pi']}"
+            elif k == 'ccn': fm = f"={c}{P_['cc']}+{c}{P_['pi']}"
             else: fm = f"={c}{P_['dR']}-{c}{P_['cf']}-{c}{P_['pi']}"
             put(CF, f'{c}{rcf}', fm, f_link if fn else f_bold if k in ('sP', 'sV', 'cf', 'pi', 'resid') else f_norm, NUM)
         put(CF, f'H{rcf}', f'=SUM(D{rcf}:G{rcf})', f_bold if fn is None else f_norm, NUM); rcf += 1

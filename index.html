@@ -11,11 +11,12 @@
 <main><div id="kpi"></div>
 <section><h2>Trayectorias trimestrales</h2><div id="legend"></div><div id="charts"></div></section>
 <section><h2>Comparación de escenarios</h2><div class="wrap" id="cmp"></div></section>
-<section><div class="bar"><h2>Detalle trimestral</h2><div id="tabs" role="group" aria-label="Escenario"></div></div><div class="wrap" id="det"></div></section>
+<section><div class="bar"><h2>Detalle trimestral</h2><div class="acts"><div id="tabs" role="group" aria-label="Escenario"></div><button type="button" id="dlDet">Exportar CSV</button></div></div><div class="wrap" id="det"></div></section>
 <footer>Motor: port a JavaScript de <code>python/build_xlsx.py</code>. Los cambios se recalculan al instante en el navegador.</footer></main></div>
 <div id="cf" class="page" hidden><h2>Balance cambiario estimado, 2027</h2>
 <p class="lead">Estimación trimestral del balance cambiario de cada escenario, con el orden del balance cambiario del BCRA: cuenta corriente (estimada por el usuario, con su ingreso primario), cuenta financiera del sector público y privado, variación de reservas del modelo y saldo para que cierre el modelo. Positivo = ingreso neto de divisas; negativo = salida neta. Calculada con los supuestos de la solapa Simulador. Ver detalle en Metodología.</p>
-<section><div class="wrap" id="cfsum"></div></section>
-<section><div class="bar"><h2>Detalle trimestral</h2><div id="cftabs" role="group" aria-label="Escenario"></div></div><div class="wrap" id="cfdet"></div></section></div>
+<section><h2>Referencia 2026</h2><div class="wrap" id="cfref"></div><p class="note2">PBI 2026: US$ 768.210 millones (proyección del FMI). La referencia con la que se miden los shocks de 2027 es la cuenta corriente total de 2026 (que ya incluye el ingreso primario), anualizada; se compara con la cuenta corriente neta del ingreso primario de 2027.</p></section>
+<section><h2>Total 2027 por escenario</h2><div class="wrap" id="cfsum"></div></section>
+<section><div class="bar"><h2>Detalle trimestral</h2><div class="acts"><div id="cftabs" role="group" aria-label="Escenario"></div><button type="button" id="dlCf">Exportar CSV</button></div></div><div class="wrap" id="cfdet"></div></section></div>
 <div id="met" hidden></div>
 <script type="module" src="/src/main.js"></script></body></html>

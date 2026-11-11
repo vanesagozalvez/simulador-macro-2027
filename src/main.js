@@ -8,7 +8,7 @@ const COL = i => `var(--c${i})`; let cur = 0, curCf = 0;
 // [clave, etiqueta, escala de entrada, ¿por escenario?]
 const SEC = [
   { t: 'Modelo', o: 1, sel: 1, f: [] },
-  { t: 'Política y sector externo', o: 1, f: [['ca27', 'Cuenta corriente 2027 (% PBI)', 100, 1], ['fae', 'Compra neta de dólares de personas humanas (US$ M por mes; negativo = ventas netas)', 1, 1], ['rho4', 'Riesgo país a fin de 2027 (pb)', 1, 1], ['p', 'Prob. de caída del acuerdo con el FMI (%)', 100, 1], ['pfac', 'Factor de compras del BCRA', 1, 1]] },
+  { t: 'Política y sector externo', o: 1, f: [['ca27', 'Cuenta corriente 2027 (% PBI, antes del ingreso primario)', 100, 1], ['fae', 'Compra neta de dólares de personas humanas (US$ M por mes; negativo = ventas netas)', 1, 1], ['rho4', 'Riesgo país a fin de 2027 (pb)', 1, 1], ['p', 'Prob. de caída del acuerdo con el FMI (%)', 100, 1], ['pfac', 'Factor de compras del BCRA', 1, 1]] },
   { t: 'Financiamiento (US$ millones)', o: 1, f: [['saldo', 'Saldo del programa 2026', 1, 1], ['loc', 'Emisión local en dólares', 1, 1], ['intl', 'Emisión internacional', 1, 1], ['u1', 'Pagos de utilidades y dividendos, trimestre 1 (US$ M)', 1, 1], ['u2', 'Pagos de utilidades y dividendos, trimestre 2 (US$ M)', 1, 1], ['u3', 'Pagos de utilidades y dividendos, trimestre 3 (US$ M)', 1, 1], ['onca', 'Fracción de los pagos de ON que son intereses (%)', 100]] },
   { t: 'Generales', f: [['gtr', 'Crecimiento tendencial (%)', 100], ['pi0', 'Inflación inicial de N (% anual)', 1], ['E0', 'Tipo de cambio inicial ($/US$)', 1], ['anc4', 'Ancla de inflación T4-2027 (%)', 1]] },
   { t: 'Curva de Phillips', f: [['gamma', 'Inercia de la inflación (γ)', 1], ['theta', 'Peso de la inflación pasada (ϑ)', 1], ['kappa', 'Pendiente respecto de la brecha (κ)', 1], ['betaE', 'Traspaso de depreciación rezagada (β_E)', 1], ['betai', 'Costo financiero (β_i)', 1], ['betae', 'Expectativas de depreciación (β_ε)', 1], ['e4', 'Efecto de la prob. de caída del FMI en la depreciación esperada (ε₄)', 1], ['a', 'Peso de los transables en el IPC (a)', 1]] },
@@ -82,9 +82,9 @@ function render() {
   $('det').innerHTML = `<table><thead><tr><th>Concepto</th>${QL.map(q => `<th>${q}</th>`).join('')}</tr></thead><tbody>${QROWS.map(([l, k, f]) => k ? `<tr><td>${l}</td>${r.q[k].map((v, j) => (!j && FLOW.includes(k)) ? '<td>–</td>' : cell(v, f)).join('')}</tr>` : gp(l, 6)).join('')}</tbody></table>`;
 }
 // Balance cambiario estimado (solapa propia)
-const CFROWS = [['Cuenta corriente (estimada por el usuario)'], ['Cuenta corriente total supuesta en el escenario', 'cc', 1],
+const CFROWS = [['Cuenta corriente (estimada por el usuario)'], ['Cuenta corriente estimada por el usuario (antes del ingreso primario)', 'cc', 1],
   ['Ingreso primario'], ['Intereses de deuda pública (MECON)', 'intPub'], ['Intereses de obligaciones negociables', 'intON'], ['Utilidades y dividendos', 'div'], ['Subtotal ingreso primario', 'pi', 1],
-  ['Memo: saldo de bienes y servicios implícito en el supuesto (cuenta corriente menos ingreso primario)', 'bsA'],
+  ['Cuenta corriente neta del ingreso primario (cuenta corriente estimada más subtotal ingreso primario)', 'ccn', 1],
   ['Cuenta financiera: sector público'], ['Desembolsos de organismos internacionales', 'ooii'], ['Desembolsos del FMI', 'imf'], ['Préstamo bilateral', 'bil'], ['Emisión de deuda local en dólares', 'loc'], ['Emisión internacional de deuda', 'intl'],
   ['Amortizaciones de capital, netas de roll over intra sector público', 'cap'], ['BOPREAL Serie 1 (capital)', 'bopreal'], ['Subtotal sector público', 'sP', 1],
   ['Cuenta financiera: sector privado'], ['Privatizaciones (inversión directa)', 'priv'], ['Liquidación de ON ya emitidas', 'onIn'], ['Pagos de capital de ON', 'onPay'], ['Formación de activos externos de personas humanas', 'fae'], ['Subtotal sector privado', 'sV', 1],
@@ -92,7 +92,13 @@ const CFROWS = [['Cuenta corriente (estimada por el usuario)'], ['Cuenta corrien
   ['Variación de reservas'], ['Variación de reservas del modelo', 'dR', 1],
   ['Saldo para que cierre el modelo'], ['Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', 'resid', 1]];
 const CFQ = ['T1-2027', 'T2-2027', 'T3-2027', 'T4-2027', 'Total 2027'], tot4 = a => a.slice(1).reduce((x, y) => x + y, 0);
+function renderRef() {
+  const f = nf(2), pp = v => nf(2)(v / A.gdp * 100) + '%', k = 12 / A.mes26, antes = A.cc26 - A.int26 - A.div26;
+  const rows = [['Cuenta corriente (incluye el ingreso primario)', A.cc26], ['Intereses pagados (egreso, ya incluido arriba)', A.int26], ['Utilidades y dividendos (egreso, ya incluido arriba)', A.div26], ['Cuenta corriente antes del ingreso primario', antes]];
+  $('cfref').innerHTML = `<table><thead><tr><th>Referencia 2026 (balance cambiario, acumulado de ${A.mes26} meses)</th><th>US$ millones</th><th>% del PBI</th><th>Anualizado (US$ millones)</th><th>Anualizado (% del PBI)</th></tr></thead><tbody>${rows.map(([l, v], i) => `<tr class="${i === 3 ? 'tt' : ''}"><td>${l}</td>${cell(v, f)}<td class="${v < 0 ? 'n' : ''}">${pp(v)}</td>${cell(v * k, f)}<td class="${v < 0 ? 'n' : ''}">${pp(v * k)}</td></tr>`).join('')}</tbody></table>`;
+}
 function renderCF(R = SCEN.map((_, i) => run(A, i))) {
+  renderRef();
   const row = (l, k, b, v) => `<tr class="${b ? 'tt' : ''}"><td>${l}</td>${v.map(x => cell(x, nf())).join('')}</tr>`;
   $('cfsum').innerHTML = `<table><thead><tr><th>Total 2027 (US$ millones)</th>${SCEN.map((s, i) => `<th><span class="d" style="background:${COL(i)}"></span>${s}</th>`).join('')}</tr></thead><tbody>${CFROWS.map(([l, k, b]) => k ? row(l, k, b, R.map(r => tot4(r.cf[k]))) : gp(l, 4)).join('')}</tbody></table>`;
   const c = R[curCf].cf;
@@ -103,4 +109,14 @@ $('met').innerHTML = METODOLOGIA;
 function view(v) { $('sim').hidden = v !== 'sim'; $('cf').hidden = v !== 'cf'; $('met').hidden = v !== 'met'; $('nav').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); history.replaceState(null, '', v === 'met' ? '#metodologia' : v === 'cf' ? '#balance-cambiario' : location.pathname); scrollTo(0, 0); }
 $('nav').addEventListener('click', e => { const b = e.target.closest('button'); if (b) view(b.dataset.v); });
 if (location.hash === '#metodologia') view('met'); else if (location.hash === '#balance-cambiario' || location.hash === '#cuenta-financiera') view('cf');
+// Exportación a CSV (separador ;, decimales con coma, UTF-8 con BOM: abre bien en Excel en español)
+const csvNum = v => String(+v.toFixed(4)).replace('.', ',');
+const csvText = c => /[;"\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c;
+function download(name, rows) {
+  const url = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(csvText).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+const slug = s => s.toLowerCase();
+$('dlDet').addEventListener('click', () => { const r = run(A, cur); download(`detalle_trimestral_${slug(SCEN[cur])}.csv`, [['Concepto', ...QL], ...QROWS.map(([l, k]) => k ? [l, ...r.q[k].map((v, j) => (!j && FLOW.includes(k)) ? '' : csvNum(v))] : [l])]); });
+$('dlCf').addEventListener('click', () => { const c = run(A, curCf).cf; download(`balance_cambiario_${slug(SCEN[curCf])}.csv`, [[`${SCEN[curCf]} (US$ millones)`, ...CFQ], ...CFROWS.map(([l, k]) => k ? [l, ...[...c[k].slice(1), tot4(c[k])].map(csvNum)] : [l])]); });
 build(); render();
