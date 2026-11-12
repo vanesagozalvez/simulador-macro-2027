@@ -142,7 +142,8 @@ row('intl', 'Emisión internacional de deuda', 'US$ millones', 0, 4000, 0, 'USUA
 sec('Riesgo y expectativas')
 row('p', 'Probabilidad de caída del acuerdo con el FMI (por trimestre)', 'probabilidad', 0.05, 0.02, 0.10, 'ANALISTA', fmt=PCT, key_assump=True, note='Es la probabilidad percibida; no modela la caída efectiva del acuerdo.')
 row('pref', 'Probabilidad de referencia', 'probabilidad', 0.05, origin='ANALISTA', fmt=PCT)
-row('rho0', 'Riesgo país inicial', 'puntos básicos', 600, origin='USUARIO', fmt=NUM, note='Valor del 1 de octubre de 2026 según fuentes consultadas.')
+row('rho0', 'Riesgo país promedio del T4-2026 (dato del usuario)', 'puntos básicos', 600, origin='USUARIO', fmt=NUM, note='Dato que debe suministrar el usuario. Es el punto de partida de la trayectoria del riesgo país y la referencia contra la que se mide su variación en 2027. El valor cargado (600) es provisorio.')
+row('i0', 'Tasa de interés promedio del T4-2026 (dato del usuario)', '% anual', 25.0, origin='USUARIO', fmt=NUM1, note='Dato que debe suministrar el usuario. Es el punto de partida de la trayectoria de la tasa y la tasa de referencia de la curva de Phillips (costo financiero). El valor cargado (25) es provisorio.')
 row('rho4', 'Riesgo país a fin de 2027', 'puntos básicos', 600, 400, 1000, 'ANALISTA', fmt=NUM, key_assump=True, note='Trayectoria lineal desde el valor inicial; propuesta del analista.')
 S.column_dimensions['A'].width = 58; S.column_dimensions['B'].width = 20
 for c_ in 'CDE': S.column_dimensions[c_].width = 14
@@ -291,7 +292,7 @@ put(Co, 'A14', 'Parámetros de la curva de Phillips y de referencia', f_bold)
 phil = [('gamma', 'Inercia de la inflación (γ)', 0.5), ('theta', 'Peso de la inflación pasada en las expectativas (ϑ)', 0.6), ('kappa', 'Pendiente respecto de la brecha de N (κ)', 0.20),
         ('betaE', 'Traspaso de la depreciación rezagada (β_E)', 0.07), ('betai', 'Costo financiero (β_i)', 0.10), ('betae', 'Expectativas de depreciación (β_ε)', 0.35),
         ('a', 'Peso de los transables en el IPC (a)', 0.60), ('e4', 'Efecto de la probabilidad de caída en la depreciación esperada (ε_4)', 0.40),
-        ('i0', 'Tasa de referencia (% anual)', 25.0), ('eps0', 'Depreciación esperada de referencia (% anual)', 20.0), ('x0', 'Brecha inicial de N (pp)', 100*info['xgap']),
+        ('i0', 'Tasa de referencia = tasa de interés del T4-2026 (% anual, hoja Supuestos)', f"=Supuestos!$C${SR['i0']}"), ('eps0', 'Depreciación esperada de referencia (% anual)', 20.0), ('x0', 'Brecha inicial de N (pp)', 100*info['xgap']),
         ('Ytot', 'Producto total de referencia (unidades)', Ytot), ('Yref', 'Producto no transable de referencia (unidades)', 100.0), ('scale', 'US$ millones por unidad anual', SCALE),
         ('emp0', 'Empleo de referencia (unidades)', 100.0 + P1['lT']*P1['YT00'])]
 CP = {}
