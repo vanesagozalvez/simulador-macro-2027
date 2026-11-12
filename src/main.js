@@ -9,12 +9,12 @@ const COL = i => `var(--c${i})`; let cur = 0, curCf = 0;
 const SEC = [
   { t: 'Modelo', o: 1, sel: 1, f: [] },
   { t: 'Política y sector externo', o: 1, f: [['ca27', 'Cuenta corriente 2027 (% PBI, antes del ingreso primario)', 100, 1], ['fae', 'Compra neta de dólares de personas humanas (US$ M por mes; negativo = ventas netas)', 1, 1], ['rho4', 'Riesgo país a fin de 2027 (pb)', 1, 1], ['p', 'Prob. de caída del acuerdo con el FMI (%)', 100, 1], ['pfac', 'Factor de compras del BCRA', 1, 1]] },
-  { t: 'Financiamiento (US$ millones)', o: 1, f: [['saldo', 'Saldo del programa 2026', 1, 1], ['loc', 'Emisión local en dólares', 1, 1], ['intl', 'Emisión internacional', 1, 1], ['u1', 'Pagos de utilidades y dividendos, trimestre 1 (US$ M)', 1, 1], ['u2', 'Pagos de utilidades y dividendos, trimestre 2 (US$ M)', 1, 1], ['u3', 'Pagos de utilidades y dividendos, trimestre 3 (US$ M)', 1, 1], ['onca', 'Fracción de los pagos de ON que son intereses (%)', 100]] },
+  { t: 'Financiamiento (US$ millones)', o: 1, f: [['saldo', 'Saldo del programa 2026', 1, 1], ['loc', 'Emisión local en dólares', 1, 1], ['intl', 'Emisión internacional', 1, 1], ['u1', 'Pagos de utilidades y dividendos, trimestre 1 (US$ M)', 1, 1], ['u2', 'Pagos de utilidades y dividendos, trimestre 2 (US$ M)', 1, 1], ['u3', 'Pagos de utilidades y dividendos, trimestre 3 (US$ M)', 1, 1], ['encaje', 'Encaje de los pagos de ON ley argentina (%)', 100], ['tasaAR', 'Tasa promedio de las ON ley argentina (% anual)', 100], ['tasaNY', 'Tasa promedio de las ON ley Nueva York (% anual)', 100]] },
   { t: 'Generales', f: [['gtr', 'Crecimiento tendencial (%)', 100], ['pi0', 'Inflación inicial de N (% anual)', 1], ['E0', 'Tipo de cambio inicial ($/US$)', 1], ['anc4', 'Ancla de inflación T4-2027 (%)', 1]] },
   { t: 'Curva de Phillips', f: [['gamma', 'Inercia de la inflación (γ)', 1], ['theta', 'Peso de la inflación pasada (ϑ)', 1], ['kappa', 'Pendiente respecto de la brecha (κ)', 1], ['betaE', 'Traspaso de depreciación rezagada (β_E)', 1], ['betai', 'Costo financiero (β_i)', 1], ['betae', 'Expectativas de depreciación (β_ε)', 1], ['e4', 'Efecto de la prob. de caída del FMI en la depreciación esperada (ε₄)', 1], ['a', 'Peso de los transables en el IPC (a)', 1]] },
 ];
 // Límites de entrada (en las unidades que se muestran): no admiten valores negativos; las probabilidades y pesos tienen tope
-const LIM = { rho4: [0], p: [0, 100], pfac: [0], intl: [0], loc: [0], u1: [0], u2: [0], u3: [0], onca: [0, 100], pi0: [0], E0: [1], anc4: [0], gamma: [0, 1], theta: [0, 1], kappa: [0], betaE: [0], betai: [0], betae: [0], e4: [0], a: [0, 1] };
+const LIM = { rho4: [0], p: [0, 100], pfac: [0], intl: [0], loc: [0], u1: [0], u2: [0], u3: [0], encaje: [0, 100], tasaAR: [0], tasaNY: [0], pi0: [0], E0: [1], anc4: [0], gamma: [0, 1], theta: [0, 1], kappa: [0], betaE: [0], betai: [0], betae: [0], e4: [0], a: [0, 1] };
 const bad = (k, v) => { const l = LIM[k]; return !!l && (v < l[0] || (l[1] !== undefined && v > l[1])); };
 const lim = k => LIM[k] ? ` min="${LIM[k][0]}"${LIM[k][1] !== undefined ? ` max="${LIM[k][1]}"` : ''} title="${LIM[k][1] !== undefined ? `Entre ${LIM[k][0]} y ${LIM[k][1]}` : `Mínimo ${LIM[k][0]}`}"` : '';
 const inp = (k, sc, i) => `<input type="number" step="any" inputmode="decimal"${lim(k)} aria-label="${k}${i === undefined ? '' : ' ' + SCEN[i]}" data-k="${k}" ${i === undefined ? '' : `data-i="${i}"`} data-sc="${sc}" value="${+((i === undefined ? A[k] : A[k][i]) * sc).toFixed(4)}">`;
@@ -83,11 +83,11 @@ function render() {
 }
 // Balance cambiario estimado (solapa propia)
 const CFROWS = [['Cuenta corriente (estimada por el usuario)'], ['Cuenta corriente estimada por el usuario (antes del ingreso primario)', 'cc', 1],
-  ['Ingreso primario'], ['Intereses de deuda pública (MECON)', 'intPub'], ['Intereses de obligaciones negociables', 'intON'], ['Utilidades y dividendos', 'div'], ['Subtotal ingreso primario', 'pi', 1],
+  ['Ingreso primario'], ['Intereses de deuda pública (MECON)', 'intPub'], ['Intereses de ON y títulos subsoberanos', 'intON'], ['Utilidades y dividendos', 'div'], ['Subtotal ingreso primario', 'pi', 1],
   ['Total Cuenta corriente (incluye el ingreso primario)', 'ccn', 1],
   ['Cuenta financiera: sector público'], ['Desembolsos de organismos internacionales', 'ooii'], ['Desembolsos del FMI', 'imf'], ['Préstamo bilateral', 'bil'], ['Emisión de deuda local en dólares', 'loc'], ['Emisión internacional de deuda', 'intl'],
   ['Amortizaciones de capital, netas de roll over intra sector público', 'cap'], ['BOPREAL Serie 1 (capital)', 'bopreal'], ['Subtotal sector público', 'sP', 1],
-  ['Cuenta financiera: sector privado'], ['Privatizaciones (inversión directa)', 'priv'], ['Liquidación de ON ya emitidas', 'onIn'], ['Pagos de capital de ON', 'onPay'], ['Formación de activos externos de personas humanas', 'fae'], ['Subtotal sector privado', 'sV', 1],
+  ['Cuenta financiera: sector privado'], ['Privatizaciones (inversión directa)', 'priv'], ['Liquidación de ON ya emitidas', 'onIn'], ['Pagos de capital de ON y títulos subsoberanos (neto de encaje)', 'onPay'], ['Formación de activos externos de personas humanas', 'fae'], ['Subtotal sector privado', 'sV', 1],
   ['Total cuenta financiera', 'cf', 1],
   ['Variación de reservas'], ['Variación de reservas del modelo', 'dR', 1],
   ['Saldo para que cierre el modelo'], ['Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', 'resid', 1],

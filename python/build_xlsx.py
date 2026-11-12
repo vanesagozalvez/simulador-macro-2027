@@ -91,7 +91,7 @@ row('anc4', 'Ancla de expectativas de inflación, T4-2027', '% anual', 18.0, ori
 sec('Selector de coeficientes del bloque macro')
 row('sel', 'Juego de coeficientes (1 = calibración heredada; 2 = alternativa con depreciación contractiva)', 'número 1 o 2', SEL, origin='ANALISTA', fmt='0', key_assump=True, note='Juego 1: propensión a gastar del sector transable 0,40 e indexación salarial 0,60 (la depreciación es expansiva). Juego 2: 0,10 y 0,20 (la depreciación es contractiva). Es una decisión de calibración que debe validarse.')
 sec('Cuenta corriente y política')
-row('ca27', 'Cuenta corriente 2027', '% del PBI', 0.0, 0.005, -0.005, 'USUARIO', fmt=PCT2, key_assump=True, note='Base 0%, optimista +0,5%, pesimista −0,5%, dados por el usuario.')
+row('ca27', 'Cuenta corriente 2027 (antes del ingreso primario)', '% del PBI', 0.035, 0.035, 0.035, 'USUARIO', fmt=PCT2, key_assump=True, note='3,5% en los tres escenarios, dado por el usuario (comparable con 3,42% de 2026 antes del ingreso primario).')
 row('fae', 'Compra neta de dólares de personas humanas (promedio mensual)', 'US$ millones por mes', 2250, 2250, 2250, 'ANALISTA', fmt=NUM, key_assump=True, note='Positivo = compras netas; negativo = ventas netas. Se compara con la referencia de calibración (fila siguiente): la diferencia es un exceso (o defecto) de demanda de divisas que se suma a la cuenta corriente y a las ON en el shock s_psi. Con el valor de referencia no altera los resultados. No reduce automáticamente las compras del BCRA, que se cargan con el factor sobre el espejo.')
 row('faeref', 'Compra neta de dólares de personas humanas de referencia (calibración)', 'US$ millones por mes', 2250, origin='ANALISTA', fmt=NUM, note='Valor con el que se calibraron los coeficientes (FAE0 = 2.250 por mes en make_sets.py).')
 row('dtx', 'Baja trimestral de derechos de exportación', 'pp por trimestre', 0.75, origin='ANALISTA', fmt=NUM3, note='Derivado del cronograma del Decreto 423/2026 (soja de 24% a 21% hasta diciembre de 2027), repartido en forma lineal.')
@@ -103,7 +103,10 @@ row('onq1', '  de ello, ingresa en T1-2027', 'US$ millones', 2700, origin='ANALI
 row('u1', 'Pagos de utilidades y dividendos, trimestre 1 de 2027', 'US$ millones', 0, 0, 0, 'ANALISTA', fmt=NUM, key_assump=True, note='Demanda de divisas que reduce las compras netas del BCRA (igual que los pagos de ON). Valor inicial cero: debe cargarse. Se computan como cuenta corriente, ingreso primario (utilidades y dividendos), en la hoja Balance_cambiario.')
 row('u2', 'Pagos de utilidades y dividendos, trimestre 2 de 2027', 'US$ millones', 0, 0, 0, 'ANALISTA', fmt=NUM, key_assump=True)
 row('u3', 'Pagos de utilidades y dividendos, trimestre 3 de 2027', 'US$ millones', 0, 0, 0, 'ANALISTA', fmt=NUM, key_assump=True)
-row('onca', '  fracción de esa demanda ya contenida en la cuenta corriente objetivo', '% de la demanda', 0.0, origin='ANALISTA', fmt=PCT, note='Fracción de los pagos de ON que corresponde a intereses: son ingreso primario de la cuenta corriente (no cuenta financiera) y se muestran así en la hoja Balance_cambiario; el resto es capital. Por defecto 0%: debe cargarse.')
+row('encaje', 'Encaje de los pagos de ON de ley argentina', '% del pago', 0.25, origin='USUARIO', fmt=PCT, note='Parte del pago que queda como encaje en el BCRA y aumenta sus reservas: solo el resto (75%) es demanda de dólares. Las ON de ley extranjera no tienen encaje (100% demanda).')
+row('tasaar', 'Tasa promedio simple de las ON ley argentina', '% anual', 0.0671, origin='USUARIO', fmt=PCT2, note='Dato del usuario. Se usa para estimar la parte de los pagos que son intereses (ingreso primario).')
+row('tasany', 'Tasa promedio simple de las ON ley Nueva York', '% anual', 0.0838, origin='USUARIO', fmt=PCT2, note='Dato del usuario. Se usa para estimar la parte de los pagos que son intereses (ingreso primario).')
+row('ninter', 'Años de intereses que incluye cada pago de ON', 'años', 1, origin='ANALISTA', fmt=NUM, note='Supuesto: cada pago incluye capital más un año de intereses a la tasa promedio, por lo que la proporción de intereses es r/(1+r). El archivo de pagos no separa capital de intereses.')
 sec('Capital de organismos internacionales según el Presupuesto 2027 (Cuadro 16 y texto del informe)')
 row('selcap', 'Fuente del capital de organismos en los usos (1 = planilla MECON; 2 = Presupuesto 2027)', 'número 1 o 2', 2, origin='USUARIO', fmt='0', key_assump=True, note='Con 2 se reemplaza el capital de FMI y de organismos de la planilla MECON por el del Presupuesto 2027 (no se suma, para no contar dos veces); los intereses siguen siendo los de MECON.')
 row('fxpl', 'Tipo de cambio para convertir el Cuadro 16 a dólares', '$ por US$', 1530, origin='ANALISTA', fmt=NUM1, key_assump=True, note='Es el cociente entre los 7,84 billones del FMI y los US$4.407 millones de capital del FMI de la planilla MECON, de modo que el total del FMI no cambia y solo cambia el calendario. El Cuadro 16 no informa el tipo de cambio del Presupuesto; es editable.')
@@ -150,15 +153,33 @@ S.freeze_panes = 'C4'
 PON = json.load(open('pagos_on.json')); PO = wb.create_sheet('Pagos_ON')
 put(PO, 'A1', 'Pagos en dólares de obligaciones negociables por mes y empresa (noviembre de 2026 a diciembre de 2027)', f_t)
 put(PO, 'A2', 'Fuente: archivo Pagos de Obligaciones Negociables por Mes y Empresa, aportado por el usuario (no verificado por el analista). Son datos fijos y los mismos en los tres escenarios.', f_norm)
-header(PO, 4, ['Mes', 'Empresa / emisor', 'US$ millones'])
-for k_, (m_, e_, v_) in enumerate(PON['filas']): put(PO, f'A{5+k_}', m_); put(PO, f'B{5+k_}', e_); put(PO, f'C{5+k_}', v_, f_in, NUM)
+header(PO, 4, ['Mes', 'Empresa / emisor', 'US$ millones', 'Ley aplicable predominante'])
+for k_, (m_, e_, v_, l_) in enumerate(PON['filas']): put(PO, f'A{5+k_}', m_); put(PO, f'B{5+k_}', e_); put(PO, f'C{5+k_}', v_, f_in, NUM); put(PO, f'D{5+k_}', l_)
 NP = 5 + len(PON['filas']) - 1
-header(PO, 4, ['Trimestre', 'Meses', 'US$ millones'], start=5)
+header(PO, 4, ['Trimestre', 'Meses', 'Total pagos', 'Ley argentina', 'Ley extranjera o sin dato', 'Demanda de dólares (neta de encaje)', 'Intereses (ingreso primario)', 'Capital (cuenta financiera)', 'Subsoberanos: capital', 'Subsoberanos: intereses'], start=6)
 for k_, (lab_, ms_) in enumerate([('T4-2026 (nov y dic)', ['nov-26', 'dic-26']), ('T1-2027', ['ene-27', 'feb-27', 'mar-27']), ('T2-2027', ['abr-27', 'may-27', 'jun-27']), ('T3-2027', ['jul-27', 'ago-27', 'sep-27']), ('T4-2027', ['oct-27', 'nov-27', 'dic-27'])]):
-    put(PO, f'E{5+k_}', lab_); put(PO, f'F{5+k_}', ', '.join(ms_))
-    put(PO, f'G{5+k_}', '=' + '+'.join(f'SUMIF($A$5:$A${NP},"{m_}",$C$5:$C${NP})' for m_ in ms_), f_norm, NUM)
-put(PO, 'E10', 'Total 2027', f_bold); put(PO, 'G10', '=SUM(G6:G9)', f_bold, NUM)
-PO.column_dimensions['A'].width = 12; PO.column_dimensions['B'].width = 34; PO.column_dimensions['E'].width = 22; PO.column_dimensions['F'].width = 22
+    r_ = 5 + k_; put(PO, f'F{r_}', lab_); put(PO, f'G{r_}', ', '.join(ms_))
+    put(PO, f'H{r_}', '=' + '+'.join(f'SUMIF($A$5:$A${NP},"{m_}",$C$5:$C${NP})' for m_ in ms_), f_norm, NUM)
+    put(PO, f'I{r_}', '=' + '+'.join(f'SUMIFS($C$5:$C${NP},$A$5:$A${NP},"{m_}",$D$5:$D${NP},"Ley argentina*")+SUMIFS($C$5:$C${NP},$A$5:$A${NP},"{m_}",$D$5:$D${NP},"Sin dato*")' for m_ in ms_), f_norm, NUM)
+    put(PO, f'J{r_}', f'=H{r_}-I{r_}', f_norm, NUM)
+    put(PO, f'K{r_}', f'=(I{r_}+N{r_}+O{r_})*(1-$H$13)+J{r_}', f_norm, NUM)
+    put(PO, f'L{r_}', f'=I{r_}*(1-$H$13)*$H$17+J{r_}*$H$18+O{r_}*(1-$H$13)', f_norm, NUM)
+    put(PO, f'M{r_}', f'=K{r_}-L{r_}', f_norm, NUM)
+    put(PO, f'N{r_}', '=' + '+'.join(f'SUMIF($Q$5:$Q${4+len(PON["subsoberanos"])},"{m_}",$S$5:$S${4+len(PON["subsoberanos"])})' for m_ in ms_), f_norm, NUM)
+    put(PO, f'O{r_}', '=' + '+'.join(f'SUMIF($Q$5:$Q${4+len(PON["subsoberanos"])},"{m_}",$T$5:$T${4+len(PON["subsoberanos"])})' for m_ in ms_), f_norm, NUM)
+put(PO, 'F10', 'Total 2027', f_bold)
+for c_ in 'HIJKLMNO': put(PO, f'{c_}10', f'=SUM({c_}6:{c_}9)', f_bold, NUM)
+put(PO, 'F12', 'Parámetros (hoja Supuestos)', f_bold)
+for r_, lab_, fm_, ft_ in [(13, 'Encaje de las ON de ley argentina', f"=Supuestos!$C${SR['encaje']}", PCT), (14, 'Tasa promedio ON ley argentina', f"=Supuestos!$C${SR['tasaar']}", PCT2), (15, 'Tasa promedio ON ley Nueva York', f"=Supuestos!$C${SR['tasany']}", PCT2), (16, 'Años de intereses por pago', f"=Supuestos!$C${SR['ninter']}", NUM)]:
+    put(PO, f'F{r_}', lab_); put(PO, f'H{r_}', fm_, f_link, ft_)
+put(PO, 'F17', 'Proporción de intereses, ley argentina'); put(PO, 'H17', '=H14*H16/(1+H14*H16)', f_norm, PCT2)
+put(PO, 'F18', 'Proporción de intereses, ley extranjera'); put(PO, 'H18', '=H15*H16/(1+H15*H16)', f_norm, PCT2)
+put(PO, 'F20', 'Ley argentina: pagos cuya ley predominante empieza con "Ley argentina" (incluye los de ley mixta con predominio argentino) o figura "Sin dato en el universo" (criterio del usuario). Ley extranjera: el resto, 100% demanda de dólares. Los títulos subsoberanos (tabla de la derecha) son de ley argentina, con capital e intereses explícitos y el mismo encaje.', f_norm)
+put(PO, 'F21', 'T4-2026 (nov y dic) incluye el Bono Mendoza 2026 del 20/12/2026; como el modelo mide los flujos desde T1-2027, ese trimestre no entra en el total 2027.', f_norm)
+put(PO, 'Q3', 'Títulos subsoberanos (datos del usuario)', f_bold)
+header(PO, 4, ['Mes', 'Emisor', 'Capital', 'Intereses', 'Ley aplicable'], start=17)
+for k_, s_ in enumerate(PON['subsoberanos']): put(PO, f'Q{5+k_}', s_['mes']); put(PO, f'R{5+k_}', s_['emisor']); put(PO, f'S{5+k_}', s_['capital'], f_in, NUM); put(PO, f'T{5+k_}', s_['intereses'], f_in, NUM); put(PO, f'U{5+k_}', s_['ley'])
+for c_, w_ in zip('ABCDFGHIJKLMNOQRSTU', (12, 34, 14, 30, 22, 22, 14, 14, 18, 20, 18, 18, 16, 16, 10, 60, 12, 12, 14)): PO.column_dimensions[c_].width = w_
 
 # =============================== Presupuesto_2027
 B = wb.create_sheet('Presupuesto_2027')
@@ -333,7 +354,7 @@ for name, sc in scen:
     line('ca_usd', 'Cuenta corriente (flujo trimestral)', 'US$ millones', [f"={c}{R['ca_pct']}*{sp('gdp', sc)}/4" for c in COLS], total='=SUM(D#:G#)')
     line('ca_ref', 'Cuenta corriente de referencia de 2026 (flujo trimestral)', 'US$ millones', [f"={sp('ca26', sc)}*{sp('gdp', sc)}/4"] * 5)
     line('on_in', 'Ingresos de dólares por liquidación de ON emitidas', 'US$ millones', [None, f"={sp('onq1', sc)}", 0, 0, 0], total='=SUM(D#:G#)')
-    line('on_dem', 'Demanda de dólares en el MULC por pagos de ON', 'US$ millones', [None] + [f"=Pagos_ON!$G${6+k}*(1-{sp('onca', sc)})" for k in range(4)], total='=SUM(D#:G#)')
+    line('on_dem', 'Demanda de dólares en el MULC por pagos de capital de ON y títulos subsoberanos (neta de encaje)', 'US$ millones', [None] + [f"=Pagos_ON!$M${6+k}" for k in range(4)], total='=SUM(D#:G#)')
     line('fae', 'Compra neta de dólares de personas humanas (flujo trimestral)', 'US$ millones', [None] + [f"=3*{sp('fae', sc)}" for c in 'DEFG'], total='=SUM(D#:G#)')
     line('div', 'Pagos de utilidades y dividendos', 'US$ millones', [None, f"={sp('u1', sc)}", f"={sp('u2', sc)}", f"={sp('u3', sc)}", 0], total='=SUM(D#:G#)')
     line('on_net', 'Flujo neto de ON (ingresos menos demanda)', 'US$ millones', [None] + [f"={c}{R['on_in']}-{c}{R['on_dem']}" for c in 'DEFG'], total='=SUM(D#:G#)', font=f_bold)
@@ -344,7 +365,7 @@ for name, sc in scen:
     line('rho', 'Riesgo país', 'pb', [f"={sp('rho0', sc)}"] + [f"={sp('rho0', sc)}+({sp('rho4', sc)}-{sp('rho0', sc)})*{k}/4" for k in (1, 2, 3, 4)], fmt=NUM)
     seas = {'D': f"(Supuestos!$C${SR['m1']}+Supuestos!$C${SR['m2']}+Supuestos!$C${SR['m3']})", 'E': f"(Supuestos!$C${SR['m4']}+Supuestos!$C${SR['m5']}+Supuestos!$C${SR['m6']})", 'F': f"(Supuestos!$C${SR['m7']}+Supuestos!$C${SR['m8']}+Supuestos!$C${SR['m9']})"}
     avgq = f"(SUM(Supuestos!$C${SR['m1']}:Supuestos!$C${SR['m9']})/3)"
-    line('pi', 'Ingreso primario 2027 (intereses de deuda pública y de ON, utilidades y dividendos)', 'US$ millones', [0] + [f"=-(Calendario_FX!{c}{KR['Intereses en moneda extranjera']}+Pagos_ON!$G${6+i}*{sp('onca', sc)}+{c}{R['div']})" for i, c in enumerate('DEFG')], total='=SUM(D#:G#)')
+    line('pi', 'Ingreso primario 2027 (intereses de deuda pública y de ON, utilidades y dividendos)', 'US$ millones', [0] + [f"=-(Calendario_FX!{c}{KR['Intereses en moneda extranjera']}+Pagos_ON!$L${6+i}+{c}{R['div']})" for i, c in enumerate('DEFG')], total='=SUM(D#:G#)')
     line('ccn', 'Total cuenta corriente, incluye el ingreso primario (flujo trimestral)', 'US$ millones', [0] + [f"={c}{R['ca_usd']}+{c}{R['pi']}" for c in 'DEFG'], total='=SUM(D#:G#)')
     line('s_psi', 'Exceso de demanda de divisas (total de la cuenta corriente menor que la referencia, demanda de ON y compra neta de personas humanas sobre la referencia)', 'unid. anual', [0] + [f"=(-({c}{R['ccn']}-{c}{R['ca_ref']})+({c}{R['on_dem']}-{c}{R['on_in']})+({c}{R['fae']}-3*{sp('faeref', sc)}))*4/{CP['scale']}" for c in 'DEFG'], fmt=NUM3)
     # compras subyacentes: se descuenta el patrón estacional de 2026 (T4 sin patrón)
@@ -440,13 +461,13 @@ for name, sc in scen:
     R = SC[name]; section(CF, rcf, f'Escenario {name.lower()}', 8); rcf += 1; header(CF, rcf, ['Concepto', 'Unidad'] + QL + ['2027']); rcf += 1
     spec = [('h', 'Cuenta corriente (estimada por el usuario)'), ('cc', 'Cuenta corriente estimada por el usuario (antes del ingreso primario)', lambda c: f"={name}!{c}{R['ca_usd']}"),
         ('h', 'Ingreso primario'), ('intPub', 'Intereses de deuda pública (MECON)', lambda c: f"=-Calendario_FX!{c}{KR['Intereses en moneda extranjera']}"),
-        ('intON', 'Intereses de obligaciones negociables', lambda c: f"=-Pagos_ON!$G${6+'DEFG'.index(c)}*{sp('onca', sc)}"), ('div', 'Utilidades y dividendos', lambda c: f"=-{name}!{c}{R['div']}"),
+        ('intON', 'Intereses de ON y títulos subsoberanos', lambda c: f"=-Pagos_ON!$L${6+'DEFG'.index(c)}"), ('div', 'Utilidades y dividendos', lambda c: f"=-{name}!{c}{R['div']}"),
         ('pi', 'Subtotal ingreso primario', None), ('ccn', 'Total Cuenta corriente (incluye el ingreso primario)', None),
         ('h', 'Cuenta financiera: sector público'), ('ooii', 'Desembolsos de organismos internacionales', lambda c: f"={name}!{c}{R['ooii']}"), ('imf', 'Desembolsos del FMI', lambda c: f"={name}!{c}{R['imf']}"),
         ('bil', 'Préstamo bilateral', lambda c: f"={name}!{c}{R['bil']}"), ('loc', 'Emisión de deuda local en dólares', lambda c: f"={name}!{c}{R['loc']}"), ('intl', 'Emisión internacional de deuda', lambda c: f"={name}!{c}{R['intl']}"),
         ('cap', 'Amortizaciones de capital, netas de roll over intra sector público', lambda c: f"=-(Calendario_FX!{c}{CK}+Calendario_FX!{c}{KR['adj']}-{name}!{c}{R['intra']})"), ('bopreal', 'BOPREAL Serie 1 (capital)', lambda c: f"=-{name}!{c}{R['bo']}"),
         ('sP', 'Subtotal sector público', None), ('h', 'Cuenta financiera: sector privado'), ('priv', 'Privatizaciones (inversión directa)', lambda c: f"={name}!{c}{R['priv']}"), ('onIn', 'Liquidación de ON ya emitidas', lambda c: f"={name}!{c}{R['on_in']}"),
-        ('onPay', 'Pagos de capital de ON', lambda c: f"=-{name}!{c}{R['on_dem']}"), ('fae', 'Formación de activos externos de personas humanas', lambda c: f"=-{name}!{c}{R['fae']}"),
+        ('onPay', 'Pagos de capital de ON y títulos subsoberanos (neto de encaje)', lambda c: f"=-{name}!{c}{R['on_dem']}"), ('fae', 'Formación de activos externos de personas humanas', lambda c: f"=-{name}!{c}{R['fae']}"),
         ('sV', 'Subtotal sector privado', None), ('cf', 'Total cuenta financiera', None),
         ('h', 'Variación de reservas'), ('dR', 'Variación de reservas del modelo', lambda c: f"={name}!{c}{R['dR']}"),
         ('h', 'Saldo para que cierre el modelo'), ('resid', 'Saldo de bienes y servicios requerido (variación de reservas menos cuenta financiera menos ingreso primario)', None),
@@ -491,7 +512,7 @@ put(V, f'A{rw}', 'Peso del sector transable en el producto total'); put(V, f'B{r
 for name, sc in scen:
     R = SC[name]
     put(V, f'A{rw}', f'{name}: fuentes menos usos igual a la suma de los netos'); put(V, f'B{rw}', f"={name}!H{R['src']}-{name}!H{R['uses']}", f_link, NUM); put(V, f'C{rw}', f"={name}!G{R['cum']}", f_link, NUM); put(V, f'D{rw}', f'=IF(ABS(B{rw}-C{rw})<0.5,"OK","REVISAR")'); rw += 1
-    put(V, f'A{rw}', f'{name}: flujo neto de ON de 2027 igual a ingresos menos pagos'); put(V, f'B{rw}', f"={name}!H{R['on_net']}", f_link, NUM); put(V, f'C{rw}', f"=Supuestos!{dict(Base='C',Optimista='D',Pesimista='E')[name]}{SR['onq1']}-Pagos_ON!$G$10*(1-Supuestos!{dict(Base='C',Optimista='D',Pesimista='E')[name]}{SR['onca']})", f_link, NUM); put(V, f'D{rw}', f'=IF(ABS(B{rw}-C{rw})<0.5,"OK","REVISAR")'); rw += 1
+    put(V, f'A{rw}', f'{name}: flujo neto de ON de 2027 igual a ingresos menos pagos'); put(V, f'B{rw}', f"={name}!H{R['on_net']}", f_link, NUM); put(V, f'C{rw}', f"=Supuestos!{dict(Base='C',Optimista='D',Pesimista='E')[name]}{SR['onq1']}-Pagos_ON!$M$10", f_link, NUM); put(V, f'D{rw}', f'=IF(ABS(B{rw}-C{rw})<0.5,"OK","REVISAR")'); rw += 1
     put(V, f'A{rw}', f'{name}: compras de septiembre iguales al espejo de 2026 por el factor'); put(V, f'B{rw}', f"={name}!H{R['pur']}-{name}!G{R['pur']}", f_link, NUM); put(V, f'C{rw}', f"=SUM(Supuestos!C{SR['m1']}:C{SR['m9']})*Supuestos!{dict(Base='C',Optimista='D',Pesimista='E')[name]}{SR['pfac']}", f_link, NUM); put(V, f'D{rw}', f'=IF(ABS(B{rw}-C{rw})<0.5,"OK","REVISAR")'); rw += 1
 put(V, f'A{rw+1}', 'Detalle de la descomposición de Θ^N (script): ' + ', '.join(f"{k} {v:.3f}" for k, v in info['comp'].items()), f_norm, wrap=True)
 V.column_dimensions['A'].width = 80

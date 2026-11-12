@@ -1,6 +1,12 @@
 // Motor del simulador: port a JS de la lógica de build_xlsx.py (hojas Base/Optimista/Pesimista).
 import SA from './data/set_A.json'; import SB from './data/set_B.json'; import DM from './data/deuda_mensual.json'; import PON from './data/pagos_on.json';
-const ON_Q = PON.trimestral_2027;   // pagos de ON de 2027 por trimestre (US$ M), según el archivo de pagos por mes y empresa
+const ON_L = PON.trimestral_2027.local, ON_F = PON.trimestral_2027.extranjera, SUB_K = PON.trimestral_2027.sub_capital, SUB_I = PON.trimestral_2027.sub_intereses;   // pagos de ON de 2027 por trimestre (US$ M): ley argentina (incluye mixta con predominio argentino y sin dato) y ley extranjera; más títulos subsoberanos de ley argentina con capital e intereses explícitos
+// Demanda de dólares por pagos de ON: la ley argentina tiene encaje (parte que queda en reservas del BCRA); la ley extranjera, no. Intereses = pago * r*n/(1+r*n).
+function onPay(A) {
+  const n = A.ninter, sL = A.tasaAR * n / (1 + A.tasaAR * n), sF = A.tasaNY * n / (1 + A.tasaNY * n), dL = ON_L.map(v => v * (1 - A.encaje));
+  const D = dL.map((v, i) => v + ON_F[i] + (1 - A.encaje) * (SUB_K[i] + SUB_I[i])), I = dL.map((v, i) => v * sL + ON_F[i] * sF + (1 - A.encaje) * SUB_I[i]);
+  return { D, I, K: D.map((v, i) => v - I[i]) };   // demanda total, intereses (ingreso primario) y capital (cuenta financiera)
+}
 const sum = a => a.reduce((x, y) => x + y, 0), q3 = v => [0, 3, 6, 9].map(a => sum(v.slice(a, a + 3)));
 const KEYS = ['dPsi','dPur','dp','drho','dtx','dtm','dG','dYT0'], OUT = ['dYN','di','dq','dYtot','dEmp','dgap'];
 const FMI_Q = q3(DM.cap27.fmi.slice(0, 12));
@@ -10,8 +16,8 @@ const FMI_PRES = [1.33,.58,0,1.48,0,0,2.25,.62,0,1.58,0,0];
 export const SCEN = ['Base','Optimista','Pesimista'];
 // Parámetros con 3 valores = [base, optimista, pesimista]
 export const DEFAULTS = {
-  sel:2, selcap:2, fae:[2250,2250,2250], faeRef:2250, /* compra neta de dólares de personas humanas (US$ M por mes, por escenario) y su referencia de calibración (make_sets.py) */ gdp:768210, cc26:12640.30, int26:-3153.80, div26:-3931.09, mes26:9, /* referencia 2026: acumulados ene-sep del balance cambiario (US$ M) y meses del acumulado */ ca27:[0,.005,-.005], gtr:.003, pistar:.035, E0:1530, pi0:35, anc0:29, anc4:18,
-  dtx:.75, dtm:.25, dG:0, onq1:2700, onca:0, u1:[0,0,0], u2:[0,0,0], u3:[0,0,0],  /* utilidades y dividendos T1, T2, T3 (US$ M por trimestre, por escenario) */
+  sel:2, selcap:2, fae:[2250,2250,2250], faeRef:2250, /* compra neta de dólares de personas humanas (US$ M por mes, por escenario) y su referencia de calibración (make_sets.py) */ gdp:768210, cc26:12640.30, int26:-3153.80, div26:-3931.09, mes26:9, /* referencia 2026: acumulados ene-sep del balance cambiario (US$ M) y meses del acumulado */ ca27:[.035,.035,.035], gtr:.003, pistar:.035, E0:1530, pi0:35, anc0:29, anc4:18,
+  dtx:.75, dtm:.25, dG:0, onq1:2700, tasaNY:.0838, tasaAR:.0671, encaje:.25, ninter:1, u1:[0,0,0], u2:[0,0,0], u3:[0,0,0],  /* utilidades y dividendos T1, T2, T3 (US$ M por trimestre, por escenario) */
   fxpl:1530, bidpl:2, otrospl:2, restopl:2.8, pfac:[1,1.15,.75], oct27:0,
   m:[1158,1557,1671,2769,2596,1418,2162,768,473],
   saldo:[1850,3700,0], imf:850, imfq:[2,2,4], ooii:4200, ooiip:[1,1,.5], bil:2000, bilp:[.5,1,0], priv:1500, privp:[.5,1,0], sh1:.5,
@@ -30,7 +36,7 @@ export function run(A, s) {
   const sd = CAL.cap.map((c, j) => c + CAL.int[j] + adj[j]), bo = CAL.bop, sdTot = sum(sd.slice(1));
   const m = A.m, seas = [0,1,2].map(k => sum(m.slice(3 * k, 3 * k + 3))), avgm = sum(m) / 9, avgq = sum(m) / 3;
   const pur = [0, ...[...seas, g('oct27') + 2 * avgm].map(v => g('pfac') * v)];
-  const onIn = [0, g('onq1'), 0, 0, 0], onDem = [0, ...ON_Q].map(v => v * (1 - A.onca)), div = [0, g('u1'), g('u2'), g('u3'), 0];
+  const onIn = [0, g('onq1'), 0, 0, 0], onp = onPay(A), onDem = [0, ...onp.K], div = [0, g('u1'), g('u2'), g('u3'), 0];
   const onNet = z().map((_, j) => j ? onIn[j] - onDem[j] : 0);
   const ajON = onNet.map((v, j) => v - div[j]);   // flujo neto de ON menos utilidades y dividendos: demanda de divisas que ajusta las compras del BCRA
   const f = { pur, on: ajON, saldo: [0, g('saldo'), 0, 0, 0], imf: z().map((_, j) => j === g('imfq') ? g('imf') : 0),
@@ -43,7 +49,7 @@ export function run(A, s) {
   const dR = z().map((_, j) => j ? f.pur[j] + f.on[j] + f.imf[j] + f.ooii[j] + f.bil[j] + f.priv[j] + f.loc[j] + f.intl[j] - (sd[j] - f.intra[j]) - bo[j] : 0);
   let r0 = 0; const dRc = dR.map(v => r0 += v), reservas = dRc.map(v => A.R0 + v);
   const ccRef = A.cc26 * 12 / A.mes26, caUsd = [0, ...J.map(() => g('ca27') * A.gdp / 4)], caRef = ccRef / 4;   // referencia 2026: cuenta corriente total (ya incluye intereses y utilidades y dividendos), anualizada
-  const piQ = z().map((_, j) => j ? -(CAL.int[j] + ON_Q[j - 1] * A.onca + div[j]) : 0);   // ingreso primario 2027: intereses de deuda pública y de ON, utilidades y dividendos
+  const piQ = z().map((_, j) => j ? -(CAL.int[j] + onp.I[j - 1] + div[j]) : 0);   // ingreso primario 2027: intereses de deuda pública y de ON, utilidades y dividendos
   const rho = z().map((_, j) => A.rho0 + (g('rho4') - A.rho0) * j / 4), pj = [A.pref, ...J.map(() => g('p'))];
   const und = j => f.pur[j] + ajON[j] - (j < 4 ? g('pfac') * (seas[j - 1] - avgq) : 0);
   const sh = [ z().map((_, j) => j ? (-(caUsd[j] + piQ[j] - caRef) + (onDem[j] - onIn[j]) + 3 * (g('fae') - A.faeRef)) * 4 / SCALE : 0),
@@ -63,7 +69,7 @@ export function run(A, s) {
   // Cuenta financiera cambiaria estimada (+ = ingreso neto de divisas). Intereses y utilidades y dividendos son ingreso primario de la cuenta corriente.
   const nz = a => a.map((v, j) => j ? v : 0), neg = a => a.map(v => -v);
   const cf = { ooii: f.ooii, imf: f.imf, bil: f.bil, loc: f.loc, intl: f.intl, cap: neg(nz(CAL.cap.map((c, j) => c + adj[j] - f.intra[j]))), bopreal: neg(nz(bo)),
-    priv: f.priv, onIn: nz(onIn), onPay: neg(onDem), div: neg(div), intPub: neg(nz(CAL.int)), intON: z().map((_, j) => j ? -ON_Q[j - 1] * A.onca : 0), fae: z().map((_, j) => j ? -3 * g('fae') : 0) };
+    priv: f.priv, onIn: nz(onIn), onPay: neg(onDem), div: neg(div), intPub: neg(nz(CAL.int)), intON: z().map((_, j) => j ? -onp.I[j - 1] : 0), fae: z().map((_, j) => j ? -3 * g('fae') : 0) };
   const add = ks => z().map((_, j) => sum(ks.map(k => cf[k][j])));
   cf.sP = add(['ooii', 'imf', 'bil', 'loc', 'intl', 'cap', 'bopreal']); cf.sV = add(['priv', 'onIn', 'onPay', 'fae']); cf.pi = add(['intPub', 'intON', 'div']); /* pi = cuenta corriente, ingreso primario */ cf.cf = cf.sP.map((v, j) => v + cf.sV[j]);
   cf.cc = nz(caUsd); cf.dR = dR; cf.resid = cf.dR.map((v, j) => v - cf.cf[j] - cf.pi[j]); cf.ccn = cf.cc.map((v, j) => v + cf.pi[j]); cf.fs = cf.ccn.map((v, j) => v + cf.cf[j]); /* fs = faltante (-) / sobrante (+) de dólares */ /* resid = saldo de bienes y servicios requerido para cerrar el modelo; ccn = cuenta corriente estimada más ingreso primario */
